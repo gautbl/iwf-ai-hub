@@ -1,0 +1,21 @@
+# Docker & OS
+.DS_Store
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environnements virtuels
+.venv/
+venv/
+ENV/
+
+# DuckDB
+data/duckdb/*.duckdb
+data/duckdb/*.duckdb.wal
+
+# Données brutes (on ne versionne pas les gros PDFs ou CSV)
+data/pdfs/*.pdf
+data/pdfs/*.csv
+
+# Variables d'environnement
+.env

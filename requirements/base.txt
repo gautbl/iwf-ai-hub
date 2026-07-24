@@ -1,0 +1,7 @@
+duckdb
+sentence-transformers
+langchain
+langchain-community
+fastapi
+uvicorn
+pydantic

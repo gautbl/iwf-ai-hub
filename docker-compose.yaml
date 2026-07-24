@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  # Base de données et stockage via DuckDB (géré par les volumes)
+  # DuckDB étant un fichier local, on expose un volume pour la persistance
+  db_storage:
+    image: alpine
+    volumes:
+      - ./data:/data
+    command: tail -f /dev/null
+
+  # LLM local pour le raisonnement et les embeddings
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  # Orchestrateur de données (Airflow)
+  # Note : Pour un dev local léger, on pourrait utiliser un simple script 
+  # mais Airflow est préférable pour démontrer vos compétences Data Eng.
+  airflow:
+    image: apache/airflow:2.7.1
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:
