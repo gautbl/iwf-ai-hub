@@ -5,3 +5,5 @@ langchain-community
 fastapi
 uvicorn
 pydantic
+pandas
+requests

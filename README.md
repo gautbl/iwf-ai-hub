@@ -2,6 +2,22 @@
 
 Plateforme d'intelligence augmentée pour l'International Weightlifting Federation (IWF).
 
+## Arborescence
+
+iwf-ai-hub/
+├── .git/
+├── .gitignore
+├── README.md
+├── docker-compose.yaml
+├── data/
+│   ├── pdfs/
+│   └── duckdb/
+├── src/
+│   └── db/
+│       └── init.sql
+└── requirements/
+    └── base.txt
+
 ## Architecture
 - **Orchestration** : LangGraph
 - **Base de données hybride** : DuckDB (SQL & VSS)
