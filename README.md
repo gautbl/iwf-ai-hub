@@ -9,9 +9,14 @@ iwf-ai-hub/
 ├── .gitignore
 ├── README.md
 ├── docker-compose.yaml
+├── dags/
+│   └── dag_etl_results.py
 ├── data/
 │   ├── pdfs/
 │   └── duckdb/
+├── dbt/
+│   └── models/
+│       └── stg_results.sql
 ├── src/
 │   └── db/
 │       └── init.sql
