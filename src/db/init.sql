@@ -1,9 +1,13 @@
 -- Installation et chargement de l'extension VSS (Vector Similarity Search)
 INSTALL vss;
 LOAD vss;
+-- Can also add:
+-- SET memory_limit = '2GB'; 
 
+
+-- Check if the following is still necessary
 -- Table pour les données de performance
-CREATE TABLE IF NOT EXISTS athletes (
+/* CREATE TABLE IF NOT EXISTS athletes (
     athlete_id INTEGER PRIMARY KEY,
     name VARCHAR,
     country VARCHAR,
@@ -24,4 +28,4 @@ CREATE TABLE IF NOT EXISTS rules_embeddings (
     id INTEGER PRIMARY KEY,
     content TEXT,
     embedding FLOAT[384] -- Adapté à la dimension de paraphrase-multilingual-MiniLM-L12-v2
-);
+); */

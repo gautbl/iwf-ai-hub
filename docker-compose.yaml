@@ -21,15 +21,18 @@ services:
   # Note : Pour un dev local léger, on pourrait utiliser un simple script 
   # mais Airflow est préférable pour démontrer vos compétences Data Eng.
   airflow:
-    image: apache/airflow:2.7.1
+    build: .  # Tells docker to use the local Dockerfile instead of using: image: apache/airflow:2.7.1
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - DBT_PROFILES_DIR=/opt/airflow/dbt # Added so dbt finds profiles.yml
     ports:
       - "8080:8080"
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
+      - ./dbt:/opt/airflow/dbt # Added so dbt has access to models and profiles.yml
+      - ./data:/data           # Added so dbt can write to the DuckDB file
     depends_on:
       - ollama
 

@@ -1,0 +1,19 @@
+# dbt/dbt_project.yml
+name: 'iwf_project'  # <--- This MUST match the name in profiles.yml
+version: '1.0.0'
+config-version: 2
+
+# This is the sequence in which dbt will run the models
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+
+# Configuration for the models
+models:
+  iwf_project:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table

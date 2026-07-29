@@ -1,0 +1,6 @@
+iwf_project: # This must match the project name in your dbt_project.yml
+  outputs:
+    dev:
+      type: duckdb
+      path: /data/duckdb/iwf_hub.duckdb # Path inside the container
+  target: dev

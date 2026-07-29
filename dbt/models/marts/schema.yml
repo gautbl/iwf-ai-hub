@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: fct_results
+    description: "Fact table containing Olympic lifting results linked to athletes and categories."
+    columns:
+      - name: result_id
+        description: "Primary key for the result"
+        tests:
+          - unique
+          - not_null
+
+      - name: athlete_id
+        description: "Foreign key linking to the athletes dimension"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_athletes')
+              field: athlete_id
+
+      - name: class_id
+        description: "Foreign key linking to the weight class dimension"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_weight_classes')
+              field: class_id
