@@ -1,0 +1,6 @@
+pytest
+PyPDF2
+duckdb
+pandas
+reportlab
+requests

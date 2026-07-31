@@ -82,6 +82,39 @@ graph TB
     style AIRFLOW fill:#e8f5e9
 ```
 
+### 📖 Légende du diagramme d'architecture
+
+#### Types de nœuds
+
+Symbole | Type | Description |
+|---|---|---|
+| 📄 📊 🌐 | Sources de données | Documents non structurés (PDFs), fichiers CSV, APIs externes |
+| 🔄 | Orchestration ETL | Apache Airflow pour le scheduling et dbt pour la transformation |
+| 🗄️ | Stockage | DuckDB avec extension VSS pour SQL + recherche vectorielle |
+| 🤖 | Intelligence Artificielle | Ollama (LLM local), embeddings, RAG et agent conversationnel |
+| 🌐 | API & Sécurité | FastAPI pour l'exposition REST, authentification et monitoring |
+| ☸️ | Infrastructure | Kubernetes pour l'orchestration des conteneurs en production |
+
+#### Flux de données
+
+Flèche | Signification |
+|---|---|
+| → | Flux de données : Déplacement ou transformation de données entre composants |
+| CSV/PDF → Airflow | Ingestion des sources brutes vers l'orchestrateur |
+| Airflow → dbt → DuckDB | Pipeline ETL : extraction, transformation, chargement |
+| DuckDB → VSS → RAG | Recherche vectorielle pour alimenter le RAG |
+| Ollama → Embeddings → VSS | Génération d'embeddings locaux et stockage |
+| Agent → FastAPI | Exposition de l'agent IA via API REST |
+| Ingress → FastAPI | Routage externe vers les services Kubernetes |
+
+#### Couleurs (styles)
+
+Couleur | Composant | Raison |
+|---|---|---|
+| 🟢 Vert clair | Airflow | Orchestration centrale du pipeline |
+| 🟠 Orange | IA | Couche intelligence artificielle |
+| 🔵 Bleu clair | Kubernetes | Infrastructure cloud-native |
+
 ---
 
 

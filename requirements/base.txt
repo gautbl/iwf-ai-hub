@@ -7,3 +7,5 @@ uvicorn
 pydantic
 pandas
 requests
+reportlab
+pytest

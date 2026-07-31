@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iwf-ai-hub"
+version = "0.1.0"
+dependencies = [
+    "pytest",
+    "PyPDF2",
+    "duckdb",
+    "pandas",
+    "reportlab",
+    "requests"
+	
+]

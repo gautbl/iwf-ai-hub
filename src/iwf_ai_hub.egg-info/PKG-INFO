@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: iwf-ai-hub
+Version: 0.1.0
+Requires-Dist: pytest
+Requires-Dist: PyPDF2
+Requires-Dist: duckdb
+Requires-Dist: pandas
+Requires-Dist: reportlab
+Requires-Dist: requests
