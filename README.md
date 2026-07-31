@@ -59,7 +59,7 @@ graph TB
         PV[Persistent Volumes<br/>DuckDB data]
     end
 
-    CSV --> EXTRACT
+    CSV --> AIRFLOW
     PDF --> AIRFLOW
     AIRFLOW --> DBT
     DBT --> DUCKDB
