@@ -32,8 +32,9 @@ graph TB
 
     subgraph Ingestion["🔄 Ingestion & ETL"]
         AIRFLOW[Apache Airflow<br/>Orchestration]
-        EXTRACT[src/pipelines/extract_results.py]
-        DBT[dbt<br/>Transformation]
+        DAG_ETL[dag_etl_results.py<br/>Workflow Airflow]
+        EXTRACT[src/pipelines/extract_results.py<br/>Extraction Python]
+        DBT[dbt<br/>Transformation SQL]
     end
 
     subgraph Storage["🗄️ Stockage"]
@@ -60,9 +61,12 @@ graph TB
         PV[Persistent Volumes<br/>DuckDB data]
     end
 
-    PDF --> AIRFLOW
     CSV --> EXTRACT
+    AIRFLOW --> DAG_ETL
+    DAG_ETL --> EXTRACT
     EXTRACT --> DUCKDB
+	
+    PDF --> AIRFLOW
     AIRFLOW --> DBT
     DBT --> DUCKDB
     
@@ -81,6 +85,7 @@ graph TB
     
     style K8s fill:#e1f5fe
     style AI fill:#fff3e0
+    style AIRFLOW fill:#e8f5e9
 ```
 
 ---
@@ -110,7 +115,7 @@ graph TB
 ```
 iwf-ai-hub/
 │
-├── 📁 k8s/                              # ⭐ NOUVEAU — Déploiement Kubernetes
+├── 📁 k8s/                             # ⭐ NOUVEAU — Déploiement Kubernetes
 │   ├── namespace.yaml                   # Isolation iwf-ai-hub
 │   ├── configmap.yaml                   # Variables d'environnement
 │   ├── secrets.yaml                     # Credentials (template)
