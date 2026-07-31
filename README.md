@@ -32,8 +32,6 @@ graph TB
 
     subgraph Ingestion["🔄 Ingestion & ETL"]
         AIRFLOW[Apache Airflow<br/>Orchestration]
-        DAG_ETL[dag_etl_results.py<br/>Workflow Airflow]
-        EXTRACT[src/pipelines/extract_results.py<br/>Extraction Python]
         DBT[dbt<br/>Transformation SQL]
     end
 
@@ -62,10 +60,6 @@ graph TB
     end
 
     CSV --> EXTRACT
-    AIRFLOW --> DAG_ETL
-    DAG_ETL --> EXTRACT
-    EXTRACT --> DUCKDB
-	
     PDF --> AIRFLOW
     AIRFLOW --> DBT
     DBT --> DUCKDB
