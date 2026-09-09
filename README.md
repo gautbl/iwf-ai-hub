@@ -124,7 +124,7 @@ Couleur | Composant | Raison |
 | Composant | Technologie | Rôle | Environnement |
 |---|---|---|---|
 | Orchestration | Apache Airflow | DAGs ETL, scheduling | Docker / Kubernetes |
-| Transformation | dbt + DuckDB | Modélisation Star Schema | .venv-dbt |
+| Transformation | dbt + DuckDB | Modélisation Star Schema | Container (via Airflow) |
 | Base de données | DuckDB + VSS | SQL + Vector Search | Container / K8s |
 | LLM & Embeddings | Ollama | LLM local, souveraineté | Container / K8s |
 | Agent IA | LangGraph | Workflow conversationnel | .venv |
@@ -142,7 +142,7 @@ Couleur | Composant | Raison |
 ```
 iwf-ai-hub/
 │
-├── 📁 k8s/                             # ⭐ NOUVEAU — Déploiement Kubernetes
+├── 📁 k8s/                             # ⭐ Phase 6 (planned) — Déploiement Kubernetes
 │   ├── namespace.yaml                   # Isolation iwf-ai-hub
 │   ├── configmap.yaml                   # Variables d'environnement
 │   ├── secrets.yaml                     # Credentials (template)
@@ -155,21 +155,23 @@ iwf-ai-hub/
 │   ├── api-service.yaml
 │   └── ingress.yaml                     # Exposition externe
 │
-├── 📁 helm/                             # ⭐ NOUVEAU — Packaging Helm
+├── 📁 helm/                             # ⭐ Phase 6 (planned) — Packaging Helm
 │   └── iwf-ai-hub/
 │       ├── Chart.yaml
 │       ├── values.yaml
 │       └── templates/
 │
-├── 📁 .gitlab-ci.yml                    # ⭐ NOUVEAU — CI/CD
+├── 📁 .gitlab-ci.yml                    # ⭐ Phase 6 (planned) — CI/CD
 │                                       
 ├── 📁 dags/                             # Airflow Workflows
-│   └── dag_etl_results.py               # Pipeline Bronze → Silver → Gold
+│   ├── dag_etl_results.py               # Pipeline Bronze → Silver → Gold
+│   └── dag_ingest_rules.py              # ⭐ Phase 3 — RAG pipeline (PDF download → chunk → embed)
 │                                       
 ├── 📁 dbt/                              # Transformation Layer
 │   ├── dbt_project.yml                  # Project config & materialization settings
 │   ├── profiles.yml                     # DuckDB connection profile
 │   └── models/                          # SQL transformation models
+│       ├── sources.yml                  # External raw table declarations
 │       ├── staging/                     # Silver Layer: Cleaning & Typing
 │       │   └── stg_results.sql         
 │       └── marts/                       # Gold Layer: Star Schema (BI Ready)
@@ -183,36 +185,28 @@ iwf-ai-hub/
 │   │   └── init.sql                     # VSS Extension installation
 │   ├── 📁 pipelines/
 │   │   ├── extract_results.py           # Bronze Layer: Data Extraction
-│   │   ├── load_pdfs.py                 # ⭐ Phase 3 — Chargement PDFs
-│   │   ├── chunking.py                  # ⭐ Phase 3 — Découpage
-│   │   ├── embeddings.py                # ⭐ Phase 3 — Vectorisation
-│   │   └── retrieval.py                 # ⭐ Phase 3 — Recherche
-│   ├── 📁 agent/                        # ⭐ Phase 4 — Agent IA
-│   │   ├── llm_config.py
-│   │   ├── tools.py
-│   │   ├── graph.py
-│   │   └── memory.py
-│   └── 📁 api/                          # ⭐ Phase 5 — API
-│       ├── main.py
-│       ├── models.py
-│       ├── auth.py
-│       └── monitoring.py
+│   │   ├── load_pdfs.py                 # Chargement PDFs
+│   │   ├── chunking.py                  # Découpage texte
+│   │   ├── embeddings.py                # Vectorisation
+│   │   └── retrieval.py                 # ⭐ Phase 3 (not yet created)
+│   ├── 📁 agent/                        # ⭐ Phase 4 (not yet created)
+│   │   └── ...
+│   └── 📁 api/                          # ⭐ Phase 5 (not yet created)
+│       └── ...
 │
 ├── 📁 tests/                            # Tests unitaires & intégration
+│   ├── conftest.py                      # pytest markers (network)
 │   ├── test_etl.py
-│   ├── test_rag.py                      # ⭐ Phase 3
-│   ├── test_agent.py                    # ⭐ Phase 4
-│   └── test_api.py                      # ⭐ Phase 5
+│   ├── test_etl_ow.py
+│   └── test_rag.py
 │
 ├── 📁 data/
-│   ├── pdfs/                            # Documents IWF
+│   ├── pdfs/                            # (empty — no IWF PDFs added yet)
 │   └── duckdb/                          # Base de données (volume)
 │
 ├── 📁 requirements/                     # Environnements isolés
 │   ├── base.txt
-│   ├── airflow.txt
-│   ├── dbt.txt
-│   └── api.txt
+│   └── airflow.txt
 │
 ├── docker-compose.yaml                  # Dev local (Docker)
 ├── Dockerfile                           # Custom Airflow + dbt-duckdb
@@ -243,23 +237,9 @@ curl http://localhost:8080/health  # Airflow
 curl http://localhost:11434/api/tags  # Ollama
 ```
 
-### Option 2 : Kubernetes (Production-like) ⭐
-```bash
-# 1. Démarrer Minikube
-minikube start --driver=docker --memory=4096
+### Option 2 : Kubernetes — Phase 6 (planned)
 
-# 2. Déployer
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/duckdb-statefulset.yaml
-kubectl apply -f k8s/duckdb-service.yaml
-kubectl apply -f k8s/ollama-deployment.yaml
-kubectl apply -f k8s/airflow-deployment.yaml
-
-# 3. Vérifier
-kubectl get pods -n iwf-ai-hub
-kubectl logs -n iwf-ai-hub deployment/airflow-webserver
-```
+Le déploiement Kubernetes sera disponible en Phase 6 avec les manifests `k8s/*.yaml` et le chart Helm `helm/iwf-ai-hub/`. En attendant, utilisez Docker Compose (Option 1) pour le développement local.
 
 ---
 
@@ -272,7 +252,7 @@ Phase | Composant | Statut | Description |
 | Phase 3 | Pipeline RAG | 🚧 En cours | PDFs, chunking, embeddings |
 | Phase 4 | Agent LangGraph | ⏳ À venir | Outils, mémoire, workflow |
 | Phase 5 | API FastAPI | ⏳ À venir | REST, auth, monitoring |
-| Phase 6 | Kubernetes | 🚧 En cours | Migration, Helm, CI/CD |
+| Phase 6 | Kubernetes | ⏳ À venir | Migration, Helm, CI/CD |
 
 ---
 

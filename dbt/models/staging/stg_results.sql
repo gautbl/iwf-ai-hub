@@ -13,5 +13,5 @@ SELECT
     CAST(best_snatch AS DOUBLE) AS snatch_total, 
     CAST(best_cj AS DOUBLE) AS clean_jerk_total, 
     CAST(total AS DOUBLE) AS combined_total
-FROM raw_ow_event_117 
+FROM {{ source('openweightlifting', 'raw_ow_event_117') }}
 -- Filter out 'out' lifters (total 0) to keep the Fact table clean

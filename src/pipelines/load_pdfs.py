@@ -1,6 +1,9 @@
 import os
+import structlog
 from PyPDF2 import PdfReader
 from typing import List, Dict
+
+logger = structlog.get_logger()
 
 def load_pdfs(pdf_folder: str) -> List[Dict[str, any]]:
     """
@@ -35,6 +38,6 @@ def load_pdfs(pdf_folder: str) -> List[Dict[str, any]]:
                             }
                         })
             except Exception as e:
-                print(f"Error processing {filename}: {e}")
+                logger.warning("pdf_processing_error", filename=filename, error=str(e))
                 
     return documents

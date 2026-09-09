@@ -1,5 +1,7 @@
 duckdb
+numpy
 sentence-transformers
+structlog
 langchain
 langchain-community
 fastapi

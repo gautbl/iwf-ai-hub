@@ -1,6 +1,50 @@
 version: 2
 
 models:
+  - name: stg_results
+    description: "Staging view: cleans and types raw OpenWeightlifting data (Silver layer)."
+    columns:
+      - name: athlete_name
+        description: "Trimmed athlete name."
+      - name: event_date
+        description: "Competition date (DATE)."
+      - name: category_name
+        description: "Trimmed weight category."
+      - name: snatch_total
+        description: "Best snatch weight (DOUBLE)."
+      - name: clean_jerk_total
+        description: "Best clean & jerk weight (DOUBLE)."
+      - name: combined_total
+        description: "Combined total weight (DOUBLE)."
+
+  - name: dim_athletes
+    description: "Dimension table of athletes (Gold layer)."
+    columns:
+      - name: athlete_id
+        description: "Primary key for the athlete"
+        tests:
+          - unique
+          - not_null
+      - name: name
+        description: "Athlete name"
+        tests:
+          - not_null
+      - name: country
+        description: "Athlete country"
+
+  - name: dim_weight_classes
+    description: "Dimension table of weight classes (Gold layer)."
+    columns:
+      - name: class_id
+        description: "Primary key for the weight class"
+        tests:
+          - unique
+          - not_null
+      - name: category_name
+        description: "Weight class name"
+        tests:
+          - not_null
+
   - name: fct_results
     description: "Fact table containing Olympic lifting results linked to athletes and categories."
     columns:

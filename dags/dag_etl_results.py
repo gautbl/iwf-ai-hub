@@ -1,7 +1,8 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
-from datetime import datetime
+from datetime import datetime, timedelta
+import structlog
 import sys
 import os
 
@@ -10,11 +11,17 @@ sys.path.insert(0, '/opt/airflow')
 
 from src.pipelines.extract_results import OpenWeightliftingExtractor, DataLoader
 
+logger = structlog.get_logger()
+
+def on_failure_callback(context):
+    task_id = context.get("task_instance", {}).task_id if context.get("task_instance") else "unknown"
+    logger.error("task_failed", dag="iwf_performance_pipeline", task_id=task_id)
+
 def run_extraction():
     # URL réelle OpenWeightlifting (exemple avec l'event 117)
-    SOURCE_URL = "https://openweightlifting.org/api/results/117.csv"
+    SOURCE_URL = "https://raw.githubusercontent.com/euanwm/openweightlifting/development/event_data/IWF/117.csv"
     # Chemin absolu dans le conteneur Docker
-    DB_PATH = "data/duckdb/iwf_hub.duckdb"
+    DB_PATH = "/data/duckdb/iwf_hub.duckdb"
     
     # Créer le répertoire si nécessaire
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
@@ -25,17 +32,24 @@ def run_extraction():
         
         df = extractor.fetch_data()
         loader.load_to_duckdb(df, "ow_event_117")
-        print(f"✅ Extraction réussie: {len(df)} lignes chargées")
+        logger.info("extraction_success", rows=len(df))
     except Exception as e:
-        print(f"❌ Erreur extraction: {e}")
+        logger.error("extraction_failed", error=str(e))
         raise
+
+DEFAULT_ARGS = {
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5),
+    "on_failure_callback": on_failure_callback,
+}
 
 with DAG(
     dag_id='iwf_performance_pipeline',
     start_date=datetime(2023, 1, 1),
     schedule_interval='@weekly', 
-    catchup=False
-    tags=['iwf', 'etl', 'performance']
+    catchup=False,
+    tags=['iwf', 'etl', 'performance'],
+    default_args=DEFAULT_ARGS
 ) as dag:
 
     extract_task = PythonOperator(

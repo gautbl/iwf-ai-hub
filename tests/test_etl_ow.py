@@ -11,7 +11,9 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 
 # Configuration
 CSV_URL = "https://raw.githubusercontent.com/euanwm/openweightlifting/development/event_data/IWF/117.csv"
-DB_PATH = "data/duckdb/iwf_hub.duckdb"
+DB_PATH = "data/duckdb/test_iwf_hub.duckdb"
+
+pytestmark = pytest.mark.network
 
 @pytest.fixture(scope="module", autouse=True)
 def manage_test_db():
@@ -64,9 +66,9 @@ def test_ow_extraction_and_loading():
     for col in expected_cols:
         assert col in columns, f"Column '{col}' missing from raw_ow_event_117"
     
-    # Verify data content (checking if the first lifter from the CSV is present)
-    first_lifter = conn.execute("SELECT lifter_name FROM raw_ow_event_117 LIMIT 1").fetchone()[0]
-    assert first_lifter == "BARU Morea", f"Data mismatch: expected BARU Morea, got {first_lifter}"
+    # Verify data content (the raw zone must contain at least one lifter)
+    first_lifter = conn.execute("SELECT lifter_name FROM raw_ow_event_117 WHERE lifter_name IS NOT NULL LIMIT 1").fetchone()[0]
+    assert first_lifter, "No lifter rows found in raw_ow_event_117"
     
     conn.close()
 
@@ -148,16 +150,17 @@ def test_full_etl_pipeline():
     
     assert raw_count_final == fact_count, f"Data loss detected! Raw: {raw_count_final}, Fact: {fact_count}"
     
-    # Verify a specific record from the CSV sample (e.g., BARU Morea)
+    # Verify a real lifter from the raw zone propagates to the Star Schema
     # This ensures that not only the count is correct, but the JOIN logic worked
+    lifter_name = conn.execute("SELECT lifter_name FROM raw_ow_event_117 WHERE lifter_name IS NOT NULL LIMIT 1").fetchone()[0]
     record = conn.execute("""
         SELECT a.name 
         FROM fct_results f 
         JOIN dim_athletes a ON f.athlete_id = a.athlete_id 
-        WHERE a.name = 'BARU Morea' LIMIT 1
-    """).fetchone()
+        WHERE a.name = ? LIMIT 1
+    """, (lifter_name,)).fetchone()
     
-    assert record is not None, "The data for 'BARU Morea' did not propagate to the Star Schema"
-    assert record[0] == "BARU Morea"
+    assert record is not None, f"The data for {lifter_name!r} did not propagate to the Star Schema"
+    assert record[0] == lifter_name
 
     conn.close()

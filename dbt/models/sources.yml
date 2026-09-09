@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: openweightlifting
+    description: "Raw tables written by the Python extract_results.py loader (Bronze layer)."
+    schema: main
+    tables:
+      - name: raw_ow_event_117
+        description: "Raw OpenWeightlifting event results, created by extract_results.py."

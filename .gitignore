@@ -4,6 +4,14 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Packaging / build artifacts
+*.egg-info/
+build/
+dist/
+
+# Logs
+logs/
+
 # Environnements virtuels
 .venv/
 venv/

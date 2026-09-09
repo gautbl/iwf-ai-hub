@@ -61,8 +61,8 @@ Tests require network access (fetches CSV from GitHub for test data).
    reportlab, pytest, PyPDF2, certifi, structlog.
 3. dbt runs inside the Airflow container (installed via Dockerfile).
    `requirements/airflow.txt` (dbt-duckdb, pandas, requests, structlog) documents the container env.
-4. Phase 4/5 deps (langchain, sentence-transformers, fastapi, uvicorn) are NOT in base.txt yet;
-   add them when those phases start.
+4. Phase 4/5 deps (langchain, langchain-community, fastapi, uvicorn, pydantic, sentence-transformers)
+   are already in base.txt; they were added ahead of those phases.
 5. Ollama runs separately for LLM/embeddings (port 11434)
 6. DuckDB data persists via Docker volume mount
 
@@ -78,9 +78,8 @@ Tests require network access (fetches CSV from GitHub for test data).
 - RAG tests create temporary PDFs using `reportlab`
 
 ## Known Issues
-- `.gitlab-ci.yml` is a skeleton (lint -> test -> build -> deploy), deploy is manual, no production auto-deploy
-- `dbt/models/marts/rules_embeddings.sql` removed: it referenced a non-existent `stg_rules` model; no raw rules source table exists yet (to be re-added in Phase 3 when a rules source + staging model are created)
-- `src/pipelines/chunking.py`, `embeddings.py`, `retrieval.py` mentioned in README but not yet created
+- `.gitlab-ci.yml` does not exist yet (Phase 6 planned)
+- `src/pipelines/chunking.py` and `embeddings.py` exist but are untracked by git; `retrieval.py` is not yet created
 - `src/agent/` and `src/api/` directories not yet created
 
 ## Language

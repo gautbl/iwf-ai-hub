@@ -3,7 +3,10 @@ import ssl
 import certifi
 import pytest
 import duckdb
+import structlog
 from src.pipelines.extract_results import OpenWeightliftingExtractor, DataLoader
+
+logger = structlog.get_logger()
 
 # Fix SSL certificates for the environment
 os.environ['SSL_CERT_FILE'] = certifi.where()
@@ -26,16 +29,17 @@ def setup_teardown():
 
 def test_extraction():
     """Tests if the extractor can fetch data from the URL."""
-    print("\nTesting extraction...")
+    logger.info("testing", name="test_extraction")
     extractor = OpenWeightliftingExtractor(TEST_URL)
     df = extractor.fetch_data()
     assert df is not None
     assert not df.empty
-    print("✅ Extraction successful.")
+    logger.info("ok", name="test_extraction")
+test_extraction = pytest.mark.network(test_extraction)
 
 def test_loading_to_duckdb():
     """Tests if the DataLoader correctly inserts data into DuckDB."""
-    print("\nTesting loading...")
+    logger.info("testing", name="test_loading_to_duckdb")
     # We need data to load; reuse extractor or create a sample DataFrame
     from pandas import DataFrame
     sample_df = DataFrame({"PassengerId": [1, 2], "Survived": [0, 1]})
@@ -49,11 +53,11 @@ def test_loading_to_duckdb():
     conn.close()
     
     assert count == 2
-    print("✅ Loading successful.")
+    logger.info("ok", name="test_loading_to_duckdb")
 
 def test_etl_full_pipeline():
     """Integration test for the full ETL flow."""
-    print("\nTesting full ETL flow...")
+    logger.info("testing", name="test_etl_full_pipeline")
     extractor = OpenWeightliftingExtractor(TEST_URL)
     df = extractor.fetch_data()
     
@@ -65,4 +69,5 @@ def test_etl_full_pipeline():
     conn.close()
     
     assert count > 0
-    print("✅ Full ETL flow successful.")
+    logger.info("ok", name="test_etl_full_pipeline")
+test_etl_full_pipeline = pytest.mark.network(test_etl_full_pipeline)

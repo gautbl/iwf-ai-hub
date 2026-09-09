@@ -1,16 +1,64 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "iwf-ai-hub"
 version = "0.1.0"
+description = "Plateforme d'intelligence augmentée pour l'IWF"
+requires-python = ">=3.11,<3.12"
+
 dependencies = [
-    "pytest",
-    "PyPDF2",
-    "duckdb",
-    "pandas",
-    "reportlab",
-    "requests"
-	
+    
+    # Core - FORCER NumPy 1.x AVANT tout le reste
+    "numpy<2",
+    
+    # Core - Phase 2 (ETL)
+    "duckdb==0.10.2",
+    "pandas>=2.0.0,<2.2.0",
+    "requests>=2.31.0",
+    
+    # Core - Phase 3 (RAG)
+    "sentence-transformers>=2.5.0,<3.0.0",
+    "PyPDF2>=3.0.0",
+    
+    # Logging (structlog, never print())
+    "structlog>=24.0.0",
+    
+    # API & Agent (Phase 4-5)
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "langgraph>=0.0.50",
+    "langchain>=0.1.0",
+    "ollama>=0.1.0",
 ]
+
+[project.optional-dependencies]
+# Dépendances spécifiques Airflow (souvent déjà présentes dans l'image officielle)
+airflow = [
+    "apache-airflow==2.7.1",  # Version fixée comme dansl'image
+    "apache-airflow-providers-http>=4.0.0",
+    "dbt-core==1.7.0",
+    "dbt-duckdb==1.7.0",      # Compatible duckdb 0.10.x
+]
+
+# Développement et tests
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+    "pre-commit>=3.5.0",
+    "reportlab>=3.6.0",
+    "certifi>=2023.0.0",
+]
+
+# Tout-en-un pour le développement local
+all = [
+    "iwf-ai-hub[airflow,dev]",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
