@@ -1,6 +1,6 @@
 import os
 import structlog
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 from typing import List, Dict
 
 logger = structlog.get_logger()

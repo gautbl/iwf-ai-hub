@@ -23,17 +23,13 @@ RUN pip install --no-cache-dir \
     "duckdb==0.10.2" \
     "dbt-duckdb==1.7.0" \
     "dbt-core==1.7.0" \
-    "sentence-transformers==2.5.1" \
     "requests>=2.28.0" \
-    "PyPDF2>=3.0.0"
+    "pypdf>=4.0.0"
 
 # Installation unique depuis pyproject.toml
 # La contrainte numpy<2 sera respectée
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -e /opt/airflow/
-
-# Pré-télécharger le modèle pour éviter le download à l'exécution
-#RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')" && \
 
 # Vérification
 RUN python -c "import numpy; print(f'✅ numpy: {numpy.__version__}')" && \

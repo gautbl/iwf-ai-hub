@@ -1,6 +1,6 @@
 duckdb
 numpy
-sentence-transformers
+pypdf
 structlog
 langchain
 langchain-community

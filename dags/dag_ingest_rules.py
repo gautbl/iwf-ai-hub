@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import os
 import sys
+import duckdb
 import requests
 import structlog
 
@@ -17,16 +18,34 @@ logger = structlog.get_logger()
 
 # Configuration
 PDF_URLS = [
-    "https://www.iwf.net/wp-content/uploads/2024/01/IWF-Technical-and-Competition-Rules-2024.pdf",
-    "https://www.iwf.net/wp-content/uploads/2024/01/IWF-Anti-Doping-Policy-2024.pdf",
-    # Ajoutez d'autres URLs IWF ici
+    "https://www.iwf.net/wp-content/uploads/downloads/2024/01/IWF_TCRR_2024.pdf",
 ]
 DB_PATH = "/data/duckdb/iwf_hub.duckdb"
 PDF_DIR = "/data/pdfs"
-OLLAMA_URL = "http://ollama:11434"
+OLLAMA_URL = "http://ollama:11434"  # Ollama local, réseau Docker
+EMBEDDING_MODEL = "nomic-embed-text"
+INIT_SQL_PATH = "/opt/airflow/src/db/init.sql"
+
+def init_database():
+    """Initialise la base DuckDB (extension VSS, table chunks, index HNSW)."""
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
+    if not os.path.exists(INIT_SQL_PATH):
+        raise FileNotFoundError(f"init.sql introuvable: {INIT_SQL_PATH}")
+
+    with open(INIT_SQL_PATH, encoding="utf-8") as f:
+        init_sql = f.read()
+
+    conn = duckdb.connect(DB_PATH)
+    try:
+        conn.execute(init_sql)
+    finally:
+        conn.close()
+
+    logger.info("db_initialized", db_path=DB_PATH)
 
 def download_pdfs():
-    """Télécharge les PDFs réglementaires IWF"""
+    """Télécharge les PDFs réglementaires IWF depuis le site officiel."""
     os.makedirs(PDF_DIR, exist_ok=True)
     downloaded = []
 
@@ -46,9 +65,9 @@ def download_pdfs():
     return f"Téléchargés: {len(downloaded)} PDFs"
 
 def process_and_chunk():
-    """Extrait le texte et chunk les PDFs"""
+    """Extrait le texte des PDFs et les découpe en chunks réglementaires."""
     chunker = JuridicalChunker(
-        chunk_size=512,  # Tokens
+        chunk_size=512,
         chunk_overlap=50,
         separators=["\n\n", "\n", ".", " ", ""]
     )
@@ -58,12 +77,15 @@ def process_and_chunk():
     documents = load_pdfs(PDF_DIR)
     for doc in documents:
         source = doc["metadata"]["source"]
+        page = doc["metadata"]["page"]
         try:
-            chunks = chunker.chunk_text(doc["text"], source=source)
+            # page est propagée depuis load_pdfs ; article est détecté
+            # puis stocké dans chaque chunk par le chunker.
+            chunks = chunker.chunk_text(doc["text"], source=source, page=page)
             all_chunks.extend(chunks)
-            logger.info("chunked", source=source, count=len(chunks))
+            logger.info("chunked", source=source, page=page, count=len(chunks))
         except Exception as e:
-            logger.warning("chunk_failed", source=source, error=str(e))
+            logger.warning("chunk_failed", source=source, page=page, error=str(e))
 
     # Sauvegarder les chunks temporairement pour la tâche suivante
     chunks_file = os.path.join(PDF_DIR, "chunks_temp.json")
@@ -73,7 +95,7 @@ def process_and_chunk():
     return f"Chunks créés: {len(all_chunks)}"
 
 def generate_embeddings():
-    """Génère les embeddings et stocke en VSS"""
+    """Génère les embeddings via Ollama local et les stocke dans DuckDB VSS."""
     chunks_file = os.path.join(PDF_DIR, "chunks_temp.json")
     if not os.path.exists(chunks_file):
         raise FileNotFoundError("Fichier chunks non trouvé. Exécutez process_and_chunk d'abord.")
@@ -82,18 +104,18 @@ def generate_embeddings():
         chunks = json.load(f)
 
     embedder = EmbeddingGenerator(
-        model_name="paraphrase-multilingual-MiniLM-L12-v2",
         ollama_url=OLLAMA_URL,
-        db_path=DB_PATH
+        db_path=DB_PATH,
+        model_name=EMBEDDING_MODEL,
     )
 
-    # Générer et stocker les embeddings
-    embedder.store_chunks(chunks, table_name="documents")
+    # article et page sont déjà portés par chaque chunk
+    inserted = embedder.store_chunks(chunks, table_name="chunks")
 
     # Nettoyage
     os.remove(chunks_file)
 
-    return f"✅ {len(chunks)} chunks vectorisés et stockés"
+    return f"{inserted} chunks vectorisés et stockés"
 
 with DAG(
     dag_id='iwf_rag_pipeline',
@@ -102,6 +124,11 @@ with DAG(
     catchup=False,
     tags=['iwf', 'rag', 'reglementation']
 ) as dag:
+
+    init_db_task = PythonOperator(
+        task_id='init_db',
+        python_callable=init_database
+    )
 
     download_task = PythonOperator(
         task_id='download_pdfs',
@@ -118,4 +145,4 @@ with DAG(
         python_callable=generate_embeddings
     )
 
-    download_task >> chunk_task >> embed_task
+    init_db_task >> download_task >> chunk_task >> embed_task

@@ -15,8 +15,7 @@ dependencies = [
     "requests>=2.31.0",
     
     # Core - Phase 3 (RAG)
-    "sentence-transformers>=2.5.0,<3.0.0",
-    "PyPDF2>=3.0.0",
+    "pypdf>=4.0.0",
     
     # Logging (structlog, never print())
     "structlog>=24.0.0",

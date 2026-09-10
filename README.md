@@ -222,6 +222,20 @@ iwf-ai-hub/
 - **Pipelines** : Apache Airflow
 - **API** : FastAPI
 
+> ⚠️ **Note DuckDB VSS** — La création d'un index HNSW sur une base DuckDB
+> persistante (fichier `data/duckdb/iwf_hub.duckdb`) exige le réglage
+> `SET hnsw_enable_experimental_persistence = true;` placé **après** `LOAD vss;`
+> (défini dans `src/db/init.sql`). L'index HNSW ne persiste pas entre les
+> sessions DuckDB : il doit être recréé au démarrage de l'application.
+
+> 📄 **Sources PDF IWF (à confirmer)** — URL active retenue dans
+> `dags/dag_ingest_rules.py` :
+> `https://www.iwf.net/wp-content/uploads/downloads/2024/01/IWF_TCRR_2024.pdf`
+> Anciennes URLs candidates (non confirmées, probablement 404) conservées pour
+> vérification ultérieure :
+> <!-- https://www.iwf.net/wp-content/uploads/2024/01/IWF-Technical-and-Competition-Rules-2024.pdf -->
+> <!-- https://www.iwf.net/wp-content/uploads/2024/01/IWF-Anti-Doping-Policy-2024.pdf -->
+
 ## 🚀 Quick Start
 ### Option 1 : Docker Compose (Développement local)
 ```bash

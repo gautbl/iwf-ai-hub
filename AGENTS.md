@@ -57,12 +57,13 @@ Tests require network access (fetches CSV from GitHub for test data).
 
 ## Environment Setup
 1. `.venv` exists on the host; deps come from `requirements/base.txt` (runtime list).
-2. `requirements/base.txt` holds only what's currently used: duckdb, pandas, requests,
-   reportlab, pytest, PyPDF2, certifi, structlog.
+2. `requirements/base.txt` holds only what's currently used: duckdb, numpy, pypdf, structlog,
+   pandas, requests, reportlab, pytest.
 3. dbt runs inside the Airflow container (installed via Dockerfile).
    `requirements/airflow.txt` (dbt-duckdb, pandas, requests, structlog) documents the container env.
-4. Phase 4/5 deps (langchain, langchain-community, fastapi, uvicorn, pydantic, sentence-transformers)
+4. Phase 4/5 deps (langchain, langchain-community, fastapi, uvicorn, pydantic)
    are already in base.txt; they were added ahead of those phases.
+   Embeddings RAG passent par Ollama local (`nomic-embed-text`) ; sentence-transformers a été retiré.
 5. Ollama runs separately for LLM/embeddings (port 11434)
 6. DuckDB data persists via Docker volume mount
 
