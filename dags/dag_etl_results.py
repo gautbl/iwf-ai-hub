@@ -13,29 +13,39 @@ from src.pipelines.extract_results import OpenWeightliftingExtractor, DataLoader
 
 logger = structlog.get_logger()
 
+# Liste configurable des events IWF à ingérer
+BASE_URL = (
+    "https://raw.githubusercontent.com/euanwm/openweightlifting/"
+    "development/event_data/IWF"
+)
+EVENT_IDS = [117, 119, 120]
+
 def on_failure_callback(context):
     task_id = context.get("task_instance", {}).task_id if context.get("task_instance") else "unknown"
     logger.error("task_failed", dag="iwf_performance_pipeline", task_id=task_id)
 
 def run_extraction():
-    # URL réelle OpenWeightlifting (exemple avec l'event 117)
-    SOURCE_URL = "https://raw.githubusercontent.com/euanwm/openweightlifting/development/event_data/IWF/117.csv"
     # Chemin absolu dans le conteneur Docker
     DB_PATH = "/data/duckdb/iwf_hub.duckdb"
-    
+
     # Créer le répertoire si nécessaire
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    
-    try:
-        extractor = OpenWeightliftingExtractor(SOURCE_URL)
-        loader = DataLoader(DB_PATH)
-        
-        df = extractor.fetch_data()
-        loader.load_to_duckdb(df, "ow_event_117")
-        logger.info("extraction_success", rows=len(df))
-    except Exception as e:
-        logger.error("extraction_failed", error=str(e))
-        raise
+
+    loader = DataLoader(DB_PATH)
+    failures = []
+
+    for event_id in EVENT_IDS:
+        try:
+            extractor = OpenWeightliftingExtractor(f"{BASE_URL}/{event_id}.csv")
+            df = extractor.fetch_data()
+            loader.load_to_duckdb(df, "ow_events", event_id=event_id)
+            logger.info("extraction_success", event_id=event_id, rows=len(df))
+        except Exception as e:
+            logger.error("extraction_failed", event_id=event_id, error=str(e))
+            failures.append(event_id)
+
+    if failures:
+        raise RuntimeError(f"Extraction failed for events: {failures}")
 
 DEFAULT_ARGS = {
     "retries": 3,

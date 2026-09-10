@@ -4,6 +4,10 @@ models:
   - name: stg_results
     description: "Staging view: cleans and types raw OpenWeightlifting data (Silver layer)."
     columns:
+      - name: event_id
+        description: "Identifier of the source event (from the CSV filename)."
+      - name: event_name
+        description: "Human readable event name from the CSV."
       - name: athlete_name
         description: "Trimmed athlete name."
       - name: event_date

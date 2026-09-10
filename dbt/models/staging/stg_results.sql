@@ -1,8 +1,12 @@
 -- stg_results.sql
 -- Cleaning and casting raw data from the CSV import
--- Note: raw_ow_event_117 is the table created by the extract_results.py script
+-- Note: raw_ow_events is the unified table created by the extract_results.py script
 
 SELECT 
+    -- Discriminant of the source event
+    event_id,
+    -- Human readable event name from the CSV
+    event AS event_name,
     -- Ensure athlete names are trimmed and consistent
     TRIM(lifter_name) AS athlete_name, 
     -- Cast date to proper DATE type
@@ -13,5 +17,5 @@ SELECT
     CAST(best_snatch AS DOUBLE) AS snatch_total, 
     CAST(best_cj AS DOUBLE) AS clean_jerk_total, 
     CAST(total AS DOUBLE) AS combined_total
-FROM {{ source('openweightlifting', 'raw_ow_event_117') }}
+FROM {{ source('openweightlifting', 'raw_ow_events') }}
 -- Filter out 'out' lifters (total 0) to keep the Fact table clean
