@@ -62,6 +62,35 @@ def test_chunk_output_schema(tmp_path):
 
     assert chunks[0]["source"] == "test_articles.pdf"
     assert chunks[0]["page"] == 1
+
+
+def test_chunk_article_detection(tmp_path):
+    """
+    Vérifie l'isolation de la détection d'article : un chunk contenant
+    "Article 5" expose bien "Article 5" dans son champ article.
+    """
+    from reportlab.pdfgen import canvas
+    from src.pipelines.chunking import JuridicalChunker
+
+    # 1. Setup: PDF temporaire avec un article IWF
+    pdf_path = tmp_path / "test_article_detection.pdf"
+    c = canvas.Canvas(str(pdf_path))
+    c.drawString(100, 750, "Article 5 - Clean and Jerk must be performed.")
+    c.save()
+
+    docs = load_pdfs(str(tmp_path))
+    assert len(docs) == 1
+
+    # 2. Execute
+    chunker = JuridicalChunker(chunk_size=64, chunk_overlap=8)
+    chunks = chunker.chunk_text(
+        docs[0]["text"],
+        source=docs[0]["metadata"]["source"],
+        page=docs[0]["metadata"]["page"],
+    )
+
+    # 3. Assert: détection d'article uniquement
+    assert len(chunks) >= 1
     assert chunks[0]["article"] == "Article 5"
 
 
@@ -142,6 +171,50 @@ def test_embed_connection_error(monkeypatch):
         ollama_url="http://localhost:11434", db_path="unused.duckdb"
     )
     with pytest.raises(requests.exceptions.ConnectionError):
+        generator.embed_text("Article 5")
+
+
+def test_embed_timeout(monkeypatch):
+    """
+    Vérifie qu'un Timeout Ollama est journalisé puis propagé.
+    """
+    import requests
+
+    from src.pipelines.embeddings import EmbeddingGenerator
+
+    def raise_timeout(*args, **kwargs):
+        raise requests.exceptions.Timeout("Ollama timeout")
+
+    monkeypatch.setattr("src.pipelines.embeddings.requests.post", raise_timeout)
+
+    generator = EmbeddingGenerator(
+        ollama_url="http://localhost:11434", db_path="unused.duckdb"
+    )
+    with pytest.raises(requests.exceptions.Timeout):
+        generator.embed_text("Article 5")
+
+
+def test_embed_http_error(monkeypatch):
+    """
+    Vérifie qu'une réponse HTTP 500 déclenche une RuntimeError.
+    """
+    from src.pipelines.embeddings import EmbeddingGenerator
+
+    class FakeResponse:
+        status_code = 500
+
+        def json(self):
+            return {}
+
+    monkeypatch.setattr(
+        "src.pipelines.embeddings.requests.post",
+        lambda *args, **kwargs: FakeResponse(),
+    )
+
+    generator = EmbeddingGenerator(
+        ollama_url="http://localhost:11434", db_path="unused.duckdb"
+    )
+    with pytest.raises(RuntimeError):
         generator.embed_text("Article 5")
 
 
@@ -251,6 +324,56 @@ def test_retrieve_ollama_unavailable(monkeypatch):
             raise requests.exceptions.ConnectionError("Ollama indisponible")
 
     monkeypatch.setattr(retrieval, "EmbeddingGenerator", FakeGenerator)
+
+    results = retrieval.retrieve("query", db_path="unused.duckdb", top_k=5)
+
+    assert results == []
+
+
+def test_retrieve_runtime_error(monkeypatch):
+    """
+    Vérifie le comportement dégradé : une RuntimeError (ex: connexion DuckDB)
+    est interceptée et retrieve() retourne une liste vide.
+    """
+    from src.pipelines import retrieval
+
+    class FakeGenerator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def embed_text(self, text):
+            return [0.0] * 768
+
+    def raise_runtime_error(db_path):
+        raise RuntimeError("DuckDB indisponible")
+
+    monkeypatch.setattr(retrieval, "EmbeddingGenerator", FakeGenerator)
+    monkeypatch.setattr(retrieval.duckdb, "connect", raise_runtime_error)
+
+    results = retrieval.retrieve("query", db_path="unused.duckdb", top_k=5)
+
+    assert results == []
+
+
+def test_retrieve_value_error(monkeypatch):
+    """
+    Vérifie le comportement dégradé : une ValueError (ex: embedding invalide)
+    est interceptée et retrieve() retourne une liste vide.
+    """
+    from src.pipelines import retrieval
+
+    class FakeGenerator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def embed_text(self, text):
+            return [0.0] * 768
+
+    def raise_value_error(db_path):
+        raise ValueError("Dimension inattendue")
+
+    monkeypatch.setattr(retrieval, "EmbeddingGenerator", FakeGenerator)
+    monkeypatch.setattr(retrieval.duckdb, "connect", raise_value_error)
 
     results = retrieval.retrieve("query", db_path="unused.duckdb", top_k=5)
 
@@ -379,3 +502,50 @@ def test_pipeline_integration(tmp_path, monkeypatch, rag_test_db):
     assert row[0] == "iwf_rules.pdf"
     assert row[1] == "Article 5"
     assert row[2] == 1
+
+
+def test_embed_idempotence(monkeypatch, rag_test_db):
+    """
+    Vérifie que store_chunks est idempotent : réinsérer le même chunk id
+    ne crée pas de doublon en base.
+    """
+    import duckdb
+    from uuid import uuid4
+
+    from src.pipelines.embeddings import EmbeddingGenerator
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return {"embedding": [0.0] * 768}
+
+    monkeypatch.setattr(
+        "src.pipelines.embeddings.requests.post",
+        lambda *args, **kwargs: FakeResponse(),
+    )
+
+    chunk = {
+        "id": str(uuid4()),
+        "source": "iwf_rules.pdf",
+        "article": "Article 5",
+        "page": 1,
+        "chunk_text": "Article 5 - Clean and Jerk must be performed.",
+    }
+
+    generator = EmbeddingGenerator(
+        ollama_url="http://localhost:11434", db_path=rag_test_db
+    )
+
+    first_inserted = generator.store_chunks([chunk])
+    second_inserted = generator.store_chunks([chunk])
+
+    conn = duckdb.connect(rag_test_db)
+    conn.execute("INSTALL vss;")
+    conn.execute("LOAD vss;")
+    count = conn.execute("SELECT count(*) FROM chunks").fetchone()[0]
+    conn.close()
+
+    assert first_inserted == 1
+    assert second_inserted == 0
+    assert count == 1

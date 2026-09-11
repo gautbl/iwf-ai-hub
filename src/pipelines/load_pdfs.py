@@ -1,11 +1,11 @@
 import os
 import structlog
 from pypdf import PdfReader
-from typing import List, Dict
+from typing import Any, Dict, List
 
 logger = structlog.get_logger()
 
-def load_pdfs(pdf_folder: str) -> List[Dict[str, any]]:
+def load_pdfs(pdf_folder: str) -> List[Dict[str, Any]]:
     """
     Reads all PDF files in a given folder and extracts their text 
     along with basic metadata.

@@ -24,12 +24,15 @@ def retrieve(query: str, db_path: str, top_k: int = 5) -> List[Dict]:
 
     Returns:
         Liste de dicts {chunk_text, source, article, page, score} triés par
-        score décroissant. Liste vide si Ollama est indisponible ou si la
+        score décroissant. Liste vide si Ollama est indisponible, si le
+        vecteur retourné est invalide (RuntimeError / ValueError) ou si la
         table chunks est vide.
 
     Raises:
         duckdb.Error: base DuckDB inaccessible ou requête invalide.
     """
+    logger.info("retrieve_start", query=query, top_k=top_k)
+
     generator = EmbeddingGenerator(
         ollama_url=OLLAMA_URL, db_path=db_path, model_name=EMBEDDING_MODEL
     )
@@ -39,9 +42,17 @@ def retrieve(query: str, db_path: str, top_k: int = 5) -> List[Dict]:
     except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
         logger.error("retrieve_ollama_unavailable", error=str(exc))
         return []
+    except RuntimeError as exc:
+        logger.error("retrieve_runtime_error", error=str(exc))
+        return []
+    except ValueError as exc:
+        logger.error("retrieve_value_error", error=str(exc))
+        return []
 
-    conn = duckdb.connect(db_path)
+    conn = None
     try:
+        conn = duckdb.connect(db_path)
+
         # L'index HNSW ne persiste pas entre les sessions DuckDB : on recharge
         # l'extension et on recrée l'index s'il est absent.
         conn.execute("INSTALL vss;")
@@ -63,11 +74,18 @@ def retrieve(query: str, db_path: str, top_k: int = 5) -> List[Dict]:
             """,
             [query_vector, top_k],
         ).fetchall()
+    except RuntimeError as exc:
+        logger.error("retrieve_runtime_error", db_path=db_path, error=str(exc))
+        return []
+    except ValueError as exc:
+        logger.error("retrieve_value_error", db_path=db_path, error=str(exc))
+        return []
     except duckdb.Error as exc:
         logger.error("retrieve_duckdb_error", db_path=db_path, error=str(exc))
         raise
     finally:
-        conn.close()
+        if conn is not None:
+            conn.close()
 
     results = [
         {

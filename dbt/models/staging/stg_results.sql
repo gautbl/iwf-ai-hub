@@ -18,4 +18,6 @@ SELECT
     CAST(best_cj AS DOUBLE) AS clean_jerk_total, 
     CAST(total AS DOUBLE) AS combined_total
 FROM {{ source('openweightlifting', 'raw_ow_events') }}
--- Filter out 'out' lifters (total 0) to keep the Fact table clean
+-- Intentionally NO WHERE clause: all results are valid data, including
+-- 'out' lifters (total = 0). They are retained in the Fact table for
+-- completeness rather than filtered out at the staging layer.

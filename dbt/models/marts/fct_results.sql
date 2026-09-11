@@ -10,7 +10,7 @@
 
 SELECT 
     -- Generate a unique ID for each result since the raw data might lack one
-    row_number() OVER () as result_id, 
+    row_number() OVER (ORDER BY event_date, athlete_id) as result_id, 
     
     -- Foreign Key to dim_athletes (via ref)
     a.athlete_id, 

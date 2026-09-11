@@ -33,6 +33,7 @@ models:
         description: "Athlete name"
         tests:
           - not_null
+          - unique
       - name: country
         description: "Athlete country"
 
@@ -48,6 +49,7 @@ models:
         description: "Weight class name"
         tests:
           - not_null
+          - unique
 
   - name: fct_results
     description: "Fact table containing Olympic lifting results linked to athletes and categories."
