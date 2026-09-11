@@ -1,13 +1,18 @@
 ---
-description: "[PLACEHOLDER] LangGraph (phase 4) and FastAPI (phase 5) agents - not active"
+description: "[PLACEHOLDER] FastAPI (phase 5) - not active"
+mode: subagent
 model: opencode-go/mimo-v2.5
+temperature: 0.1
+tools:
+  write: false
+  edit: false
+  bash: false
 permission:
   edit: deny
   bash: deny
 ---
 
 This file will be replaced by:
-- langgraph-agent.md (phase 4): src/agent/, LangGraph tools, memory
-- api-dev.md         (phase 5): src/api/, auth, Prometheus monitoring
+- api-dev.md (phase 5): src/api/, X-API-Key auth, Prometheus monitoring
 
-Do not use while src/agent/ and src/api/ do not exist.
+Do not use while src/api/ does not exist.

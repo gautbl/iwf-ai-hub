@@ -7,7 +7,7 @@ to start $ARGUMENTS (phase-4 or phase-5):
 
 Phase 4 prerequisites:
 - tests/test_rag.py passing fully
-- retrieval.py functional
+- src/pipelines/retrieval.py functional
 - src/agent/ not created -> propose the initial structure
 
 Phase 5 prerequisites:

@@ -1,6 +1,12 @@
 ---
 description: SQL and dbt model review - analysis only, no modifications
-model: opencode-go/hy3
+mode: subagent
+model: opencode-go/mimo-v2.5
+temperature: 0.0
+tools:
+  write: false
+  edit: false
+  bash: false
 permission:
   edit: deny
   bash: deny
@@ -19,4 +25,4 @@ You analyze SQL and dbt models. You never modify anything.
 - Joins without an ON condition (cartesian products)
 - Untyped columns in CASTs
 - Missing tests in schema.yml
-- Materialization inconsistent with the layer (staging/marts)
+- Materialization inconsistent with the layer (staging = view, marts = table)
