@@ -16,8 +16,29 @@
     "webfetch": "deny",
     "websearch": "deny"
   },
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "model": "opencode-go/hy3",
+      "tools": {
+        "write": true,
+        "edit": true,
+        "bash": true
+      }
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "opencode-go/mimo-v2.5",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    }
+  },
   "instructions": [
-    "docs/rag-conventions.md",
-    "docs/k8s-standards.md"
+    "AGENTS.md",
+    ".opencode/skill/pytest-conventions/SKILL.md",
+    ".opencode/skill/duckdb-vss/SKILL.md"
   ]
 }
