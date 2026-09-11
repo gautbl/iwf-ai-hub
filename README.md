@@ -165,7 +165,7 @@ iwf-ai-hub/
 │                                       
 ├── 📁 dags/                             # Airflow Workflows
 │   ├── dag_etl_results.py               # Pipeline Bronze → Silver → Gold
-│   └── dag_ingest_rules.py              # ⭐ Phase 3 — RAG pipeline (PDF download → chunk → embed)
+│   └── dag_ingest_rules.py              # RAG pipeline (init → PDF → chunk → embed)
 │                                       
 ├── 📁 dbt/                              # Transformation Layer
 │   ├── dbt_project.yml                  # Project config & materialization settings
@@ -182,13 +182,13 @@ iwf-ai-hub/
 │
 ├── 📁 src/                              # Source Code
 │   ├── 📁 db/
-│   │   └── init.sql                     # VSS Extension installation
+│   │   └── init.sql                     # VSS Extension + table chunks + index HNSW
 │   ├── 📁 pipelines/
 │   │   ├── extract_results.py           # Bronze Layer: Data Extraction
 │   │   ├── load_pdfs.py                 # Chargement PDFs
 │   │   ├── chunking.py                  # Découpage texte
-│   │   ├── embeddings.py                # Vectorisation
-│   │   └── retrieval.py                 # ⭐ Phase 3 (not yet created)
+│   │   ├── embeddings.py                # Vectorisation (Ollama nomic-embed-text)
+│   │   └── retrieval.py                 # Recherche VSS (cosine similarity)
 │   ├── 📁 agent/                        # ⭐ Phase 4 (not yet created)
 │   │   └── ...
 │   └── 📁 api/                          # ⭐ Phase 5 (not yet created)
@@ -263,7 +263,7 @@ Phase | Composant | Statut | Description |
 |---|---|---|---|
 | Phase 1 | Infrastructure Docker | ✅ Terminé | Airflow, DuckDB, Ollama |
 | Phase 2 | Pipeline ETL | ✅ Terminé | dbt, Star Schema, tests |
-| Phase 3 | Pipeline RAG | 🚧 En cours | PDFs, chunking, embeddings |
+| Phase 3 | Pipeline RAG | ✅ Terminé | PDFs, chunking, embeddings, retrieval |
 | Phase 4 | Agent LangGraph | ⏳ À venir | Outils, mémoire, workflow |
 | Phase 5 | API FastAPI | ⏳ À venir | REST, auth, monitoring |
 | Phase 6 | Kubernetes | ⏳ À venir | Migration, Helm, CI/CD |
