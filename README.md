@@ -125,6 +125,7 @@ Couleur | Composant | Raison |
 |---|---|---|---|
 | Orchestration | Apache Airflow | DAGs ETL, scheduling | Docker / Kubernetes |
 | Transformation | dbt + DuckDB | Modélisation Star Schema | Container (via Airflow) |
+| Traitement distribué | PySpark | Miroir Silver + validation parité (Phase 2.5) | Docker pyspark-notebook / venv dédié |
 | Base de données | DuckDB + VSS | SQL + Vector Search | Container / K8s |
 | LLM & Embeddings | Ollama | LLM local, souveraineté | Container / K8s |
 | Agent IA | LangGraph | Workflow conversationnel | .venv |
@@ -200,6 +201,14 @@ iwf-ai-hub/
 │   ├── test_etl_ow.py
 │   └── test_rag.py
 │
+├── 📁 notebooks/                         # ⭐ Phase 2.5 (planned) — Miroir PySpark Silver
+│   ├── silver_lifters.ipynb             # Transformation Silver en PySpark (Docker pyspark-notebook ou venv dédié)
+│   └── validate_parity.ipynb            # Validation de parité PySpark vs dbt (ligne à ligne)
+│
+├── 📁 ingestion/                         # ⭐ Phase 7 (planned) — Landing zone Bronze objet
+│   ├── upload_bronze.py                 # Upload boto3 vers MinIO (S3-compatible, endpoint_url local)
+│   └── README.md                        # Setup MinIO Docker + configuration boto3
+│
 ├── 📁 data/
 │   ├── pdfs/                            # (empty — no IWF PDFs added yet)
 │   └── duckdb/                          # Base de données (volume)
@@ -267,6 +276,8 @@ Phase | Composant | Statut | Description |
 | Phase 4 | Agent LangGraph | ⏳ À venir | Outils, mémoire, workflow |
 | Phase 5 | API FastAPI | ⏳ À venir | REST, auth, monitoring |
 | Phase 6 | Kubernetes | ⏳ À venir | Migration, Helm, CI/CD |
+| Phase 2.5 | Miroir PySpark Silver | ⏳ Optionnel | Transformation Silver en PySpark + validation de parité vs dbt |
+| Phase 7 | Couche d'ingestion | ⏳ Optionnel | Landing zone Bronze objet : MinIO (S3-compatible) + boto3, ingestion planifiée Airflow |
 
 ---
 
@@ -281,6 +292,8 @@ Architecture de données (ETL, modélisation, qualité)
 Intelligence artificielle (RAG, LLM local, agents)
 DevOps & Infrastructure (Docker, Kubernetes, CI/CD)
 Souveraineté des données (on-premise, open source)
+Stockage objet S3-compatible auto-hébergé (MinIO, boto3) — Phase 7
+PySpark (miroir Silver + validation de parité vs dbt) — Phase 2.5
 
 ---
 

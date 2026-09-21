@@ -1,13 +1,15 @@
 # AGENTS.md — IWF AI Hub
 
 ## Project Overview
-Data + AI platform for the International Weightlifting Federation. Currently in active development (Phase 3: RAG pipeline in progress).
+Data + AI platform for the International Weightlifting Federation. Phases 1-3 complete (Docker infra, ETL dbt, RAG pipeline). Phase 4 (LangGraph agent) in progress.
 
 ## Python Environnements  (CRITICAL)
 - `.venv`      → ETL scripts, RAG (Phase 3), API (Phase 5), agent LangGraph (Phase 4)
 - dbt runs inside the Airflow container (dbt-duckdb installed via Dockerfile), **not** in a host venv.
   There is no `.venv-dbt` on the host.
-Never install a dbt-only dependency into `.venv`.
+- PySpark (Phase 2.5, optional) runs in Docker (`jupyter/pyspark-notebook`) or in a dedicated
+  `.venv-spark` on the host (no Docker — requires a host JDK 11/17 with `JAVA_HOME`). **Never** in `.venv`.
+Never install a dbt-only or PySpark dependency into `.venv`.
 
 ## Conventions
 - Python 3.11+, strict types
@@ -26,6 +28,8 @@ Never install a dbt-only dependency into `.venv`.
 - **Agent**: LangGraph (not yet implemented)
 - **API**: FastAPI (not yet implemented)
 - **Infra**: Docker Compose (dev) → Kubernetes (prod)
+- **Ingestion (Phase 7, optional)**: Airflow → MinIO (S3-compatible, self-hosted) + boto3 → Bronze landing zone
+- **PySpark mirror (Phase 2.5, optional)**: Silver transformation in PySpark (Docker) + parity validation vs dbt
 
 ## Key Commands
 
@@ -66,6 +70,9 @@ Tests require network access (fetches CSV from GitHub for test data).
    Embeddings RAG passent par Ollama local (`nomic-embed-text`) ; sentence-transformers a été retiré.
 5. Ollama runs separately for LLM/embeddings (port 11434)
 6. DuckDB data persists via Docker volume mount
+7. PySpark without Docker (optional): `requirements/spark.txt` builds a dedicated `.venv-spark`
+   (pyspark, pandas, pyarrow, duckdb, jupyterlab). Prerequisite: JDK 11 or 17 with `JAVA_HOME` set.
+   Exchange data with DuckDB via Parquet files (avoids storage-version coupling).
 
 ## dbt Quirks
 - Project name must be `iwf_project` (matches `dbt_project.yml` and `profiles.yml`)
@@ -80,8 +87,8 @@ Tests require network access (fetches CSV from GitHub for test data).
 
 ## Known Issues
 - `.gitlab-ci.yml` does not exist yet (Phase 6 planned)
-- `src/pipelines/chunking.py` and `embeddings.py` exist but are untracked by git; `retrieval.py` is not yet created
-- `src/agent/` and `src/api/` directories not yet created
+- `src/agent/` (Phase 4) and `src/api/` (Phase 5) directories not yet created
+- `notebooks/` (Phase 2.5) and `ingestion/` (Phase 7) not yet created (optional phases)
 
 ## Language
 Project documentation and comments are in French. Code variable names are in English.

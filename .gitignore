@@ -14,6 +14,7 @@ logs/
 
 # Environnements virtuels
 .venv/
+.venv-spark/
 venv/
 ENV/
 

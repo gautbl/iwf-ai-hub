@@ -1,0 +1,19 @@
+# Environnement dedie PySpark (Phase 2.5) — alternative sans Docker a jupyter/pyspark-notebook
+#
+# Creation (host, sans Docker) :
+#   python -m venv .venv-spark
+#   .venv-spark\Scripts\pip install -r requirements/spark.txt
+#
+# Prerequis obligatoire : JDK 11 ou 17 installe sur l'hote, variable JAVA_HOME pointant vers le JDK.
+# Spark s'execute sur la JVM meme en mode local — Docker l'encapsulait, le venv non.
+#
+# Specifique Windows : en cas d'erreur NativeIO/Hadoop lors d'operations fichiers,
+# installer winutils.exe + hadoop.dll dans %HADOOP_HOME%\bin (https://github.com/cdarlint/winutils).
+#
+# Echange de donnees avec DuckDB via fichiers Parquet (evite le couplage de version
+# du format de stockage DuckDB entre le conteneur Airflow et le host).
+pyspark>=3.5.0,<4.0.0
+pandas>=2.0.0,<2.2.0
+pyarrow>=14.0.0
+duckdb>=0.10.0
+jupyterlab>=4.0.0

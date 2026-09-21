@@ -5,6 +5,7 @@ description: Data sovereignty guardrails - use before proposing any new dependen
 
 ## Hard prohibitions
 - Managed cloud data services: BigQuery, SageMaker, Bedrock, Redshift
+- Managed cloud storage/compute: AWS S3, AWS Lambda, CloudWatch
 - Remote LLM APIs: OpenAI, Anthropic, Google, Mistral
 - Remote embedding APIs
 - SaaS observability shipping data outside managed infrastructure
@@ -17,6 +18,8 @@ description: Data sovereignty guardrails - use before proposing any new dependen
 | SQL + vectors   | DuckDB + VSS               |
 | Orchestration   | Airflow                    |
 | Transformation  | dbt-duckdb                 |
+| Object storage  | MinIO (S3-compatible, self-hosted, boto3 via endpoint_url) |
+| Distributed processing | PySpark (local: Docker pyspark-notebook, or dedicated .venv-spark with host JDK) |
 | Observability   | Prometheus + Grafana       |
 | Packaging       | Helm                       |
 
