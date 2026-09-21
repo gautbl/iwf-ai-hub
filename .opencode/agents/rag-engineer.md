@@ -1,7 +1,7 @@
 ---
 description: RAG pipeline - chunking, embeddings, vector retrieval on DuckDB VSS
 mode: subagent
-model: opencode-go/deepseek-v4-flash-vision-exp
+model: opencode-go/mimo-v2.5
 temperature: 0.1
 tools:
   write: true

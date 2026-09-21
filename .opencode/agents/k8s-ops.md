@@ -1,7 +1,7 @@
 ---
 description: Kubernetes manifests, Helm chart, GitLab CI/CD - phase 6
 mode: subagent
-model: opencode-go/hy3
+model: opencode-go/mimo-v2.5
 temperature: 0.1
 tools:
   write: true

@@ -1,7 +1,7 @@
 ---
 description: IWF AI Hub project lead - routes work to specialized subagents
 mode: primary
-model: opencode-go/mimo-v2.5
+model: opencode-go/glm-5.3-flash
 temperature: 0.2
 tools:
   write: false

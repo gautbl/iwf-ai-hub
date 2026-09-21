@@ -1,7 +1,7 @@
 ---
 description: dbt models and DuckDB Star Schema - maintenance and evolutions
 mode: subagent
-model: opencode-go/hy3
+model: opencode-go/mimo-v2.5
 temperature: 0.1
 tools:
   write: true
