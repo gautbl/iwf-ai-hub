@@ -1,7 +1,7 @@
 ---
 description: IWF AI Hub project lead - routes work to specialized subagents
 mode: primary
-model: opencode-go/glm-5.3-flash
+model: opencode-go/minimax-m3
 temperature: 0.2
 tools:
   write: false

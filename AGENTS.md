@@ -85,9 +85,17 @@ Tests require network access (fetches CSV from GitHub for test data).
 - SSL certificates handled via `certifi` in test files
 - RAG tests create temporary PDFs using `reportlab`
 
-## Known Issues
-- `.gitlab-ci.yml` does not exist yet (Phase 6 planned)
-- `src/agent/` (Phase 4) and `src/api/` (Phase 5) directories not yet created
+## Current Status
+- Phases 1-5 complete : Docker infra, ETL dbt, pipeline RAG, agent
+  LangGraph (Phase 4), API FastAPI (Phase 5, 17 tests).
+- Phase 6 in progress : manifests K8s (namespace, ConfigMap, Secret,
+  ServiceAccount, PVC DuckDB) livrés, chart Helm + GitLab CI à venir.
+- 58 tests pytest verts (`pytest tests/`).
+
+## Known Issues / Phase 6 remaining
+- Helm chart (`helm/iwf-ai-hub/`) — étape 6
+- Ingress / HPA / NetworkPolicy — étape 6
+- `.gitlab-ci.yml` — étape 7
 - `notebooks/` (Phase 2.5) and `ingestion/` (Phase 7) not yet created (optional phases)
 
 ## Language

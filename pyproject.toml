@@ -61,3 +61,10 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*"]
+
+# Permet à `pytest tests/` (script d'entrée) de résoudre les imports
+# `from src.* ...` sans préfixer `python -m`. Ajoute la racine du projet
+# au `sys.path` utilisé par la collecte de tests.
+[tool.pytest.ini_options]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"

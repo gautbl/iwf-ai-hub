@@ -1,0 +1,37 @@
+# PersistentVolumeClaim pour la base DuckDB de l'IWF AI Hub.
+#
+# Ce volume est monté à ``/data/duckdb`` dans le pod de l'API (Phase 5)
+# et contient le fichier ``iwf_hub.duckdb`` ciblé par ``IWF_DUCKDB_PATH``
+# (cf. ``10-configmap-iwf.yaml``). La donnée doit survivre aux
+# redéploiements : c'est l'unique source de vérité des tables
+# ``fct_results`` / ``dim_*`` et de la table ``chunks`` RAG (Phase 3).
+#
+# Choix techniques :
+#   - ``ReadWriteOnce`` : DuckDB est mono-scripteur. Un seul pod de
+#     l'API écrit à la fois. Scaler l'API au-delà de 1 replica
+#     impose un second pod en ``read_only=True`` ou un snapshot
+#     partagé (hors périmètre Phase 6).
+#   - ``storage: 10Gi`` : couvre plusieurs saisons de compétition
+#     IWF + une marge pour la table ``chunks`` de la Phase 3 RAG.
+#     Ajustable via Helm (étape 6, ``values.persistence.size``).
+#   - ``storageClassName`` omis : la StorageClass par défaut du cluster
+#     est utilisée. Pour un cluster on-prem (k3s, microk8s, kubeadm),
+#     c'est typiquement ``local-path`` ou un provisionneur NFS interne.
+#     Le nom exact sera exposé via ``values.yaml`` au chart Helm.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iwf-duckdb-data
+  namespace: iwf-ai-hub
+  labels:
+    app.kubernetes.io/name: iwf-duckdb
+    app.kubernetes.io/part-of: iwf-ai-hub
+    app.kubernetes.io/component: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  # volumeMode par défaut = Filesystem (approprié pour DuckDB).

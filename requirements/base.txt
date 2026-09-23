@@ -4,6 +4,9 @@ pypdf
 structlog
 langchain
 langchain-community
+langchain-ollama
+langgraph
+langgraph-checkpoint-duckdb
 fastapi
 uvicorn
 pydantic

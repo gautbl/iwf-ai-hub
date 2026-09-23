@@ -1,0 +1,31 @@
+# ConfigMap exposé aux pods API FastAPI.
+# Source unique pour les variables d'environnement ``IWF_*`` non sensibles.
+# Les valeurs sensibles (placeholder Secret) restent dans `10-secret-iwf.yaml`.
+#
+# Les clés correspondent exactement aux champs de `src.api.config.Settings`
+# (préfixe `env_prefix="IWF_"` dans pyproject.toml).
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iwf-api-config
+  namespace: iwf-ai-hub
+  labels:
+    app.kubernetes.io/name: iwf-api
+    app.kubernetes.io/part-of: iwf-ai-hub
+    app.kubernetes.io/component: api
+data:
+  # Bind sur toutes les interfaces du pod (correct pour uvicorn en cluster).
+  IWF_HOST: "0.0.0.0"
+  # Port HTTP interne du container ; exposé par le Service de l'étape 4.
+  IWF_PORT: "8000"
+  # Niveau de log structlog (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+  IWF_LOG_LEVEL: "INFO"
+  # Chemin DuckDB à l'intérieur du container. Doit matcher le PVC monté
+  # dans `/data/duckdb` à l'étape 3 et 4 (data dogmatique du skill).
+  IWF_DUCKDB_PATH: "/data/duckdb/iwf_hub.duckdb"
+  # Endpoint Ollama résolu par DNS de service Kubernetes (même namespace :
+  # `ollama:11434` fonctionne aussi). FQDN explicite pour portabilité.
+  IWF_OLLAMA_URL: "http://ollama.iwf-ai-hub.svc.cluster.local:11434"
+  # Modèle LLM local (déjà pull sur le Deployment Ollama, étape 4).
+  IWF_LLM_MODEL: "llama3.2"

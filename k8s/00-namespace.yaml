@@ -1,0 +1,23 @@
+# Namespace dédié à la plateforme IWF AI Hub.
+# Isolement réseau (NetworkPolicy) et quotas de ressources appliqués ici.
+# Étiquette Pod Security Standards :
+#   enforce = baseline  : autorise Ollama (qui a besoin d'un filesystem
+#                         non read-only pour son cache de modèles).
+#   audit / warn = restricted : signale les violations au déploiement.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: iwf-ai-hub
+  labels:
+    app.kubernetes.io/name: iwf-ai-hub
+    app.kubernetes.io/part-of: iwf-ai-hub
+    # Pod Security Standards (PSS) — baseline au niveau du namespace,
+    # durcissement additionnel géré au niveau de chaque pod via
+    # `securityContext` (runAsNonRoot, readOnlyRootFilesystem, etc.).
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
