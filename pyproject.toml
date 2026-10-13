@@ -5,51 +5,48 @@ description = "Plateforme d'intelligence augmentée pour l'IWF"
 requires-python = ">=3.11,<3.12"
 
 dependencies = [
-    
-    # Core - FORCER NumPy 1.x AVANT tout le reste
-    "numpy<2",
-    
-    # Core - Phase 2 (ETL)
-    "duckdb==0.10.2",
-    "pandas>=2.0.0,<2.2.0",
-    "requests>=2.31.0",
-    
-    # Core - Phase 3 (RAG)
-    "pypdf>=4.0.0",
-    
-    # Logging (structlog, never print())
-    "structlog>=24.0.0",
-    
+    # Core / ETL (Phase 2)
+    "duckdb>=1.0",
+    "pandas>=2.1",
+    "requests>=2.31",
+
+    # RAG (Phase 3)
+    "pypdf>=4.0",
+
+    # Logging
+    "structlog>=24.0",
+
     # API & Agent (Phase 4-5)
-    "fastapi>=0.104.0",
-    "uvicorn>=0.24.0",
-    "langgraph>=0.0.50",
-    "langchain>=0.1.0",
-    "ollama>=0.1.0",
+    "fastapi>=0.104",
+    "uvicorn>=0.24",
+    "pydantic>=2.5",
+    "pydantic-settings>=2.1",
+    "langgraph>=1.0",
+    "langgraph-checkpoint-duckdb>=2.0",
+    "langchain-core>=1.0",
+    "langchain-ollama>=1.0",
+    "ollama>=0.3",
 ]
 
 [project.optional-dependencies]
-# Dépendances spécifiques Airflow (souvent déjà présentes dans l'image officielle)
 airflow = [
-    "apache-airflow==2.7.1",  # Version fixée comme dansl'image
+    "apache-airflow==2.7.1",
     "apache-airflow-providers-http>=4.0.0",
     "dbt-core==1.7.0",
-    "dbt-duckdb==1.7.0",      # Compatible duckdb 0.10.x
+    "dbt-duckdb==1.7.0",
 ]
 
-# Développement et tests
 dev = [
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
-    "black>=23.0.0",
-    "ruff>=0.1.0",
-    "mypy>=1.7.0",
-    "pre-commit>=3.5.0",
-    "reportlab>=3.6.0",
-    "certifi>=2023.0.0",
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "black>=24.0",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "reportlab>=4.0",
+    "certifi>=2024.0",
 ]
 
-# Tout-en-un pour le développement local
 all = [
     "iwf-ai-hub[airflow,dev]",
 ]
@@ -62,9 +59,6 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 include = ["src*"]
 
-# Permet à `pytest tests/` (script d'entrée) de résoudre les imports
-# `from src.* ...` sans préfixer `python -m`. Ajoute la racine du projet
-# au `sys.path` utilisé par la collecte de tests.
 [tool.pytest.ini_options]
 pythonpath = ["."]
 addopts = "-ra --strict-markers"
