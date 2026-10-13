@@ -14,12 +14,22 @@ import json
 from typing import Any
 
 import duckdb
+
+# Remplacer le LC_REVIVER du module jsonplus (module-level Reviver() sans
+# allowed_objects explicite) par une instance avec allowed_objects='core'.
+# Le constructeur par défaut Reviver() émet un
+# LangChainPendingDeprecationWarning ; cette affectation s'assure que le
+# code interne du checkpointer utilise un Reviver correctement configuré.
+import langgraph.checkpoint.serde.jsonplus as _jp_jsonplus  # noqa: E402
 import structlog
+from langchain_core.load.load import Reviver
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import StructuredTool
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.duckdb import DuckDBSaver
 from langgraph.graph import END, START, StateGraph
+
+_jp_jsonplus.LC_REVIVER = Reviver(allowed_objects="core")
 
 from src.agent import tools
 from src.agent.state import AgentState
