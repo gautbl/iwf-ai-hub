@@ -15,7 +15,7 @@ from typing import Any
 
 import duckdb
 import structlog
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import StructuredTool
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.duckdb import DuckDBSaver
@@ -100,7 +100,9 @@ def agent_node(state: AgentState) -> dict:
             f"[{d.get('source', '')} | {d.get('article', '')} | p.{d.get('page', '')}]"
             for d in state["retrieved_docs"]
         )
-        messages = [SystemMessage(content="Contexte réglementaire IWF :\n" + context)] + messages
+        messages = [
+            SystemMessage(content="Contexte réglementaire IWF :\n" + context)
+        ] + messages
     response = _bound_llm.invoke(messages)
     return {"messages": [response]}
 

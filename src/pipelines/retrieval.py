@@ -1,5 +1,4 @@
 import os
-from typing import Dict, List
 
 import duckdb
 import requests
@@ -14,7 +13,7 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 EMBEDDING_MODEL = "nomic-embed-text"
 
 
-def retrieve(query: str, db_path: str, top_k: int = 5) -> List[Dict]:
+def retrieve(query: str, db_path: str, top_k: int = 5) -> list[dict]:
     """Recherche les chunks les plus proches de la requête dans DuckDB VSS.
 
     Args:

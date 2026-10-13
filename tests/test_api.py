@@ -9,7 +9,7 @@ checks réseau (DuckDB / Ollama) sont neutralisés par ``monkeypatch``.
 
 from __future__ import annotations
 
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
@@ -19,7 +19,6 @@ from src.api import main as api_main
 from src.api.dependencies import get_agent_app
 from src.api.main import create_app
 from src.api.models import ComponentHealth
-
 
 # ---------------------------------------------------------------------------
 # Doubles de test
@@ -72,9 +71,7 @@ def healthy_checks(monkeypatch) -> None:
 
 
 @pytest.fixture
-def client(
-    fake_agent: FakeAgentApp, healthy_checks: None
-) -> Iterator[TestClient]:
+def client(fake_agent: FakeAgentApp, healthy_checks: None) -> Iterator[TestClient]:
     """Client FastAPI prêt à l'emploi : dépendances substituées, sous-systèmes OK."""
     app = create_app()
     app.dependency_overrides[get_agent_app] = lambda: fake_agent
@@ -165,10 +162,7 @@ def test_chat_rejects_whitespace_only_query(client: TestClient) -> None:
     # L'API n'invoque jamais l'agent pour un payload invalide.
     assert resp.json()["detail"][0]["msg"].startswith(
         "query ne peut pas être uniquement composée d'espaces"
-    ) or any(
-        "espaces" in err.get("msg", "")
-        for err in resp.json()["detail"]
-    )
+    ) or any("espaces" in err.get("msg", "") for err in resp.json()["detail"])
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +291,9 @@ def test_check_duckdb_ok(monkeypatch) -> None:
         def close(self):
             pass
 
-    monkeypatch.setattr(api_main.duckdb, "connect", lambda path, read_only=False: FakeConn())
+    monkeypatch.setattr(
+        api_main.duckdb, "connect", lambda path, read_only=False: FakeConn()
+    )
 
     result = api_main._check_duckdb("valid.duckdb")
     assert result.status == "ok"
@@ -379,9 +375,7 @@ def test_health_degraded_when_both_unreachable(
     monkeypatch.setattr(
         api_main,
         "_check_ollama",
-        lambda url: ComponentHealth(
-            name="ollama", status="degraded", detail="timeout"
-        ),
+        lambda url: ComponentHealth(name="ollama", status="degraded", detail="timeout"),
     )
 
     app = create_app()
@@ -471,6 +465,46 @@ def test_get_agent_app_delegates_to_get_app(monkeypatch) -> None:
 
     assert called is True
     assert result == "fake_app"
+
+
+def test_get_agent_app_propagates_exception(monkeypatch) -> None:
+    """Vérifie que get_agent_app() propage l'exception quand get_app() échoue.
+
+    Si la base DuckDB est inaccessible, get_app() lève une exception
+    qui doit remonter via get_agent_app() jusqu'à l'endpoint.
+    """
+    from src.api import dependencies
+
+    def broken_get_app() -> str:
+        raise RuntimeError("DuckDB indisponible")
+
+    monkeypatch.setattr(dependencies, "get_app", broken_get_app)
+
+    with pytest.raises(RuntimeError, match="DuckDB indisponible"):
+        dependencies.get_agent_app()
+
+
+def test_chat_returns_500_when_get_agent_app_fails() -> None:
+    """Quand get_app() échoue (ex: DuckDB absente), POST /chat retourne 500.
+
+    L'exception est levée pendant la résolution de Depends(get_agent_app) : on
+    remplace la dépendance via dependency_overrides pour qu'elle lève.
+    """
+    from src.api import dependencies
+
+    def broken_get_agent_app():
+        raise RuntimeError("DuckDB connection failed")
+
+    app = create_app()
+    app.dependency_overrides[dependencies.get_agent_app] = broken_get_agent_app
+
+    with TestClient(app, raise_server_exceptions=False) as c:
+        resp = c.post("/chat", json={"query": "ping"})
+
+    assert resp.status_code == 500
+    # L'exception dans la dépendance est catchée par Starlette,
+    # pas par le handler (qui n'est jamais atteint)
+    assert "Internal Server Error" in resp.text
 
 
 # ---------------------------------------------------------------------------

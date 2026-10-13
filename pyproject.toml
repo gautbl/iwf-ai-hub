@@ -59,6 +59,67 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 include = ["src*"]
 
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+ignore = [
+    "B017",  # assertRaises(Exception) — toléré dans les tests
+    "UP007",  # X | Y plutôt que Union/Optional — Python 3.11 OK
+    "E501",  # line-too-long: docstrings français et chaînes SQL longues
+    "E402",  # module-import-not-at-top: imports conditionnels dans les tests
+    "B008",  # do-not-call-function-in-default: Depends() de FastAPI
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+exclude = [
+    ".venv/",
+    "build/",
+    "data/",
+    ".scratch/",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "duckdb",
+    "structlog",
+    "langchain_core.*",
+    "langchain_ollama.*",
+    "langgraph.*",
+    "fastapi.*",
+    "pydantic.*",
+    "pydantic_settings.*",
+    "requests.*",
+    "starlette.*",
+    "pypdf.*",
+    "pandas.*",
+    "ormsgpack.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "src.pipelines.retrieval",
+    "src.agent.tools",
+    "src.api.main",
+]
+no_strict_optional = true
+
+[tool.black]
+target-version = ["py311"]
+line-length = 88
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 addopts = "-ra --strict-markers"
+filterwarnings = [
+    # Avertissements amont inoffensifs qu'on ne peut pas corriger.
+    #   - LangChainPendingDeprecationWarning (hériite PendingDeprecationWarning)
+    #   - anyio.abc.BlockingPortal (starlette 1.6 via anyio >=4.9)
+    'ignore:.*allowed_objects.*:PendingDeprecationWarning',
+    'ignore:.*anyio.abc.BlockingPortal.*',
+]

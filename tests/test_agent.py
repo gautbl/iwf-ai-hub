@@ -165,9 +165,12 @@ def test_query_results_partial_filters(monkeypatch):
     from src.agent import tools
 
     columns = ["athlete_name", "category_name", "event_date"]
-    conn = FakeConnection(columns, [
-        ("LU Xiaojun", "77 kg Men", "2021-07-28"),
-    ])
+    conn = FakeConnection(
+        columns,
+        [
+            ("LU Xiaojun", "77 kg Men", "2021-07-28"),
+        ],
+    )
     _patch_connect(monkeypatch, conn)
 
     rows = tools.query_results(category_name="77 kg Men")
@@ -291,7 +294,13 @@ def test_compute_athlete_stats_unknown_athlete(monkeypatch):
     """Vérifie qu'un athlète introuvable renvoie un dict vide."""
     from src.agent import tools
 
-    columns = ["athlete_name", "best_snatch", "best_clean_jerk", "best_total", "nb_competitions"]
+    columns = [
+        "athlete_name",
+        "best_snatch",
+        "best_clean_jerk",
+        "best_total",
+        "nb_competitions",
+    ]
     conn = FakeConnection(columns, [])
     _patch_connect(monkeypatch, conn)
 
@@ -499,6 +508,7 @@ def test_tool_node(monkeypatch):
     """Vérifie que tool_node dispatche les tool_calls vers tools.TOOLS et
     produit un ToolMessage JSON par appel, avec l'appel enregistré dans
     tool_calls."""
+
     def stub(athlete_name: str) -> dict:
         return {"athlete_name": athlete_name, "best_total": 377.0}
 
@@ -545,6 +555,7 @@ def test_tool_node(monkeypatch):
 def test_tool_node_dispatch_error(monkeypatch):
     """Vérifie la dégradation : une exception d'outil produit un ToolMessage
     {"error": ...} sans jamais remonter vers le graphe."""
+
     def broken(athlete_name: str) -> dict:
         raise RuntimeError("boom")
 
@@ -576,25 +587,30 @@ def test_tool_node_dispatch_error(monkeypatch):
 
 
 def test_get_app_cached_path(monkeypatch) -> None:
-    """Vérifie que get_app() construit l'app au premier appel et la met en cache."""
+    """Vérifie que get_app() construit l'app au premier appel et la met en cache.
+
+    Le test valide que build_graph n'est appelé qu'une seule fois,
+    même si get_app() est invoquée deux fois de suite.
+    """
     from src.agent import graph
 
-    # Simuler l'état initial : _app = None
     monkeypatch.setattr(graph, "_app", None)
 
-    called = False
+    call_count = 0
 
     def fake_build_graph() -> str:
-        nonlocal called
-        called = True
+        nonlocal call_count
+        call_count += 1
         return "fake_app"
 
     monkeypatch.setattr(graph, "build_graph", fake_build_graph)
 
-    result = graph.get_app()
+    first = graph.get_app()
+    second = graph.get_app()
 
-    assert called is True
-    assert result == "fake_app"
+    assert call_count == 1  # build_graph appelé une seule fois
+    assert first == "fake_app"
+    assert second is first  # même instance mise en cache
 
 
 def test_graph_integration(monkeypatch):

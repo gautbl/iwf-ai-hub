@@ -25,8 +25,9 @@ ou via la factory :
 from __future__ import annotations
 
 import uuid
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import Literal
 
 import duckdb
 import requests
@@ -35,7 +36,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from langchain_core.messages import HumanMessage
 from langgraph.graph.state import CompiledStateGraph
 
-from src.api.config import Settings, get_settings
+from src.api.config import get_settings
 from src.api.dependencies import get_agent_app
 from src.api.models import (
     ChatRequest,
@@ -121,7 +122,9 @@ def create_app() -> FastAPI:
             _check_duckdb(settings.duckdb_path),
             _check_ollama(settings.ollama_url),
         ]
-        overall = "ok" if all(c.status == "ok" for c in components) else "degraded"
+        overall: Literal["ok", "degraded"] = (
+            "ok" if all(c.status == "ok" for c in components) else "degraded"
+        )
         return HealthResponse(
             status=overall,
             app_name=settings.app_name,

@@ -1,5 +1,4 @@
 import re
-from typing import Dict, List, Optional
 from uuid import NAMESPACE_URL, uuid5
 
 # Patterns heuristiques de détection des articles et sections IWF.
@@ -14,13 +13,17 @@ ARTICLE_PATTERNS = [
 class JuridicalChunker:
     """Découpe le texte réglementaire IWF en chunks chevauchants."""
 
-    def __init__(self, chunk_size: int = 512, chunk_overlap: int = 50,
-                 separators: Optional[List[str]] = None):
+    def __init__(
+        self,
+        chunk_size: int = 512,
+        chunk_overlap: int = 50,
+        separators: list[str] | None = None,
+    ):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.separators = separators or ["\n\n", "\n", ".", " ", ""]
 
-    def _detect_article(self, text: str) -> Optional[str]:
+    def _detect_article(self, text: str) -> str | None:
         """Détecte le premier article/section IWF dans un texte.
 
         Args:
@@ -35,7 +38,7 @@ class JuridicalChunker:
                 return match.group(0).strip()
         return None
 
-    def chunk_text(self, text: str, source: str, page: int) -> List[Dict[str, object]]:
+    def chunk_text(self, text: str, source: str, page: int) -> list[dict[str, object]]:
         """Découpe le texte d'une page en chunks avec chevauchement.
 
         Args:
@@ -47,10 +50,10 @@ class JuridicalChunker:
             Liste de dicts {id, source, article, page, chunk_text}.
             L'embedding est ajouté ultérieurement par embeddings.py.
         """
-        chunks: List[Dict[str, object]] = []
+        chunks: list[dict[str, object]] = []
         current_pos = 0
         chunk_index = 0
-        current_article: Optional[str] = None
+        current_article: str | None = None
 
         while current_pos < len(text):
             # Extraire un chunk de taille chunk_size
@@ -71,13 +74,15 @@ class JuridicalChunker:
             if detected_article:
                 current_article = detected_article
 
-            chunks.append({
-                "id": str(uuid5(NAMESPACE_URL, f"{source}_{chunk_index}")),
-                "source": source,
-                "article": current_article,
-                "page": page,
-                "chunk_text": chunk_text.strip(),
-            })
+            chunks.append(
+                {
+                    "id": str(uuid5(NAMESPACE_URL, f"{source}_{chunk_index}")),
+                    "source": source,
+                    "article": current_article,
+                    "page": page,
+                    "chunk_text": chunk_text.strip(),
+                }
+            )
             chunk_index += 1
 
             # Avancer avec chevauchement, avec garde-fou anti-boucle infinie :

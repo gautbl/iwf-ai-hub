@@ -1,10 +1,10 @@
 import io
-import requests
-import duckdb
-import structlog
-import pandas as pd
 from abc import ABC, abstractmethod
 
+import duckdb
+import pandas as pd
+import requests
+import structlog
 from pandas import DataFrame
 
 logger = structlog.get_logger()
@@ -99,9 +99,7 @@ class DataLoader:
                 f"CREATE TABLE IF NOT EXISTS raw_{table_name} "
                 f"AS SELECT * FROM df WHERE 1=0"
             )
-            conn.execute(
-                f"DELETE FROM raw_{table_name} WHERE event_id = ?", [event_id]
-            )
+            conn.execute(f"DELETE FROM raw_{table_name} WHERE event_id = ?", [event_id])
             conn.execute(f"INSERT INTO raw_{table_name} SELECT * FROM df")
         conn.close()
 

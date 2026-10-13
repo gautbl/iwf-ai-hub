@@ -15,6 +15,7 @@ import pytest
 def test_data_extractor_is_abstract() -> None:
     """Vérifie que DataExtractor est une classe abstraite et ne peut pas être instanciée."""
     from src.pipelines.extract_results import DataExtractor
+
     with pytest.raises(TypeError):
         DataExtractor()  # type: ignore[abstract]
 

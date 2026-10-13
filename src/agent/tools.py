@@ -10,7 +10,7 @@ Tous les accès DuckDB sont en lecture seule et dégradent proprement
 de sorte qu'un échec d'outil ne fait jamais planter le graphe.
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 import duckdb
 import structlog
@@ -113,7 +113,7 @@ def query_results(
         conn.execute(sql, params if params else None)
         columns = [col[0] for col in conn.description]
         rows = conn.fetchall()
-        return [dict(zip(columns, row)) for row in rows]
+        return [dict(zip(columns, row, strict=False)) for row in rows]
     except duckdb.Error as exc:
         logger.error("query_results_query_error", error=str(exc))
         return []
@@ -158,7 +158,7 @@ def compute_athlete_stats(athlete_name: str) -> dict:
             logger.info("athlete_not_found", athlete_name=athlete_name)
             return {}
         columns = [col[0] for col in conn.description]
-        return dict(zip(columns, row))
+        return dict(zip(columns, row, strict=False))
     except duckdb.Error as exc:
         logger.error("compute_athlete_stats_query_error", error=str(exc))
         return {}
