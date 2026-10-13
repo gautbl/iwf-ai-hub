@@ -98,5 +98,19 @@ Tests require network access (fetches CSV from GitHub for test data).
 - `.gitlab-ci.yml` — étape 7
 - `notebooks/` (Phase 2.5) and `ingestion/` (Phase 7) not yet created (optional phases)
 
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout: one `GLOSSARY.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
 ## Language
 Project documentation and comments are in French. Code variable names are in English.

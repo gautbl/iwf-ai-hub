@@ -549,3 +549,119 @@ def test_embed_idempotence(monkeypatch, rag_test_db):
     assert first_inserted == 1
     assert second_inserted == 0
     assert count == 1
+
+
+def test_retrieve_duckdb_error_is_re_raised(monkeypatch) -> None:
+    """Vérifie que retrieve() laisse remonter une duckdb.Error (la couche
+    agent la rattrape)."""
+    import duckdb as duckdb_module
+
+    from src.pipelines import retrieval
+
+    class FakeGenerator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def embed_text(self, text):
+            return [0.0] * 768
+
+    class FakeConn:
+        def execute(self, sql, params=None):
+            raise duckdb_module.Error("base corrompue")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(retrieval, "EmbeddingGenerator", FakeGenerator)
+    monkeypatch.setattr(retrieval.duckdb, "connect", lambda db_path: FakeConn())
+
+    with pytest.raises(duckdb_module.Error):
+        retrieval.retrieve("query", db_path="unused.duckdb", top_k=5)
+
+
+def test_retrieve_runtime_error_on_embed_text(monkeypatch) -> None:
+    """Vérifie la dégradation : RuntimeError d'embed_text (ex: réponse HTTP
+    500 d'Ollama) renvoie une liste vide via le premier except."""
+    from src.pipelines import retrieval
+
+    class FakeGenerator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def embed_text(self, text):
+            raise RuntimeError("Ollama returned HTTP 500")
+
+    monkeypatch.setattr(retrieval, "EmbeddingGenerator", FakeGenerator)
+
+    results = retrieval.retrieve("query", db_path="unused.duckdb", top_k=5)
+    assert results == []
+
+
+def test_retrieve_value_error_on_embed_text(monkeypatch) -> None:
+    """Vérifie la dégradation : ValueError d'embed_text (ex: dimension
+    inattendue) renvoie une liste vide via le premier except."""
+    from src.pipelines import retrieval
+
+    class FakeGenerator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def embed_text(self, text):
+            raise ValueError("Dimension inattendue : 384")
+
+    monkeypatch.setattr(retrieval, "EmbeddingGenerator", FakeGenerator)
+
+    results = retrieval.retrieve("query", db_path="unused.duckdb", top_k=5)
+    assert results == []
+
+
+def test_retrieve_runtime_error_on_duckdb_query(monkeypatch) -> None:
+    """Vérifie qu'une RuntimeError lors de la requête DuckDB (ex: index VSS
+    corrompu) renvoie une liste vide."""
+    from src.pipelines import retrieval
+
+    class FakeGenerator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def embed_text(self, text):
+            return [0.0] * 768
+
+    class FakeConn:
+        def execute(self, sql, params=None):
+            raise RuntimeError("HNSW index corrompu")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(retrieval, "EmbeddingGenerator", FakeGenerator)
+    monkeypatch.setattr(retrieval.duckdb, "connect", lambda db_path: FakeConn())
+
+    results = retrieval.retrieve("query", db_path="unused.duckdb", top_k=5)
+    assert results == []
+
+
+def test_retrieve_value_error_on_duckdb_query(monkeypatch) -> None:
+    """Vérifie qu'une ValueError lors de la requête DuckDB (ex: dimension
+    incompatible) renvoie une liste vide."""
+    from src.pipelines import retrieval
+
+    class FakeGenerator:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def embed_text(self, text):
+            return [0.0] * 768
+
+    class FakeConn:
+        def execute(self, sql, params=None):
+            raise ValueError("dimension mismatch")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(retrieval, "EmbeddingGenerator", FakeGenerator)
+    monkeypatch.setattr(retrieval.duckdb, "connect", lambda db_path: FakeConn())
+
+    results = retrieval.retrieve("query", db_path="unused.duckdb", top_k=5)
+    assert results == []

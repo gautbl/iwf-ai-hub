@@ -251,6 +251,152 @@ def test_chat_returns_agent_text_in_response(client: TestClient) -> None:
 # ---------------------------------------------------------------------------
 
 
+def test_health_degraded_when_duckdb_unreachable(
+    monkeypatch, fake_agent: FakeAgentApp
+) -> None:
+    """Si DuckDB est inaccessible, /health renvoie status='degraded' et le fautif en clair."""
+    monkeypatch.setattr(
+        api_main,
+        "_check_duckdb",
+        lambda path: ComponentHealth(
+            name="duckdb", status="degraded", detail="cannot open database"
+        ),
+    )
+    monkeypatch.setattr(
+        api_main,
+        "_check_ollama",
+        lambda url: ComponentHealth(name="ollama", status="ok"),
+    )
+
+    app = create_app()
+    app.dependency_overrides[get_agent_app] = lambda: fake_agent
+    with TestClient(app) as c:
+        resp = c.get("/health")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "degraded"
+    by_name = {c["name"]: c for c in body["components"]}
+    assert by_name["duckdb"]["status"] == "degraded"
+    assert "cannot open database" in by_name["duckdb"]["detail"]
+    assert by_name["ollama"]["status"] == "ok"
+
+
+def test_check_duckdb_ok(monkeypatch) -> None:
+    """Vérifie que _check_duckdb renvoie ok quand DuckDB répond."""
+    from src.api import main as api_main
+
+    class FakeConn:
+        def execute(self, sql):
+            self._fetched = True
+            return self
+
+        def fetchall(self):
+            return [(1,)]
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(api_main.duckdb, "connect", lambda path, read_only=False: FakeConn())
+
+    result = api_main._check_duckdb("valid.duckdb")
+    assert result.status == "ok"
+
+
+def test_check_duckdb_degraded_on_failure(monkeypatch) -> None:
+    """Vérifie que _check_duckdb renvoie degraded quand DuckDB est inaccessible."""
+    from src.api import main as api_main
+
+    def broken_connect(*args, **kwargs):
+        raise RuntimeError("cannot open database file")
+
+    monkeypatch.setattr(api_main.duckdb, "connect", broken_connect)
+
+    result = api_main._check_duckdb("invalid/path.duckdb")
+    assert result.status == "degraded"
+    assert "cannot open database" in result.detail
+
+
+def test_check_ollama_ok(monkeypatch) -> None:
+    """Vérifie que _check_ollama renvoie ok quand Ollama répond."""
+    from src.api import main as api_main
+
+    class FakeResp:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr(api_main.requests, "get", lambda *a, **kw: FakeResp())
+
+    result = api_main._check_ollama("http://localhost:11434")
+    assert result.status == "ok"
+
+
+def test_check_ollama_degraded_on_connection_error(monkeypatch) -> None:
+    """Vérifie que _check_ollama renvoie degraded quand Ollama est injoignable."""
+    import requests
+
+    from src.api import main as api_main
+
+    def broken_get(*args, **kwargs):
+        raise requests.exceptions.ConnectionError("connection refused")
+
+    monkeypatch.setattr(api_main.requests, "get", broken_get)
+
+    result = api_main._check_ollama("http://localhost:11434")
+    assert result.status == "degraded"
+    assert "connection refused" in result.detail
+
+
+def test_check_ollama_degraded_on_timeout(monkeypatch) -> None:
+    """Vérifie que _check_ollama renvoie degraded en cas de timeout."""
+    import requests
+
+    from src.api import main as api_main
+
+    def timeout_get(*args, **kwargs):
+        raise requests.exceptions.Timeout("timeout")
+
+    monkeypatch.setattr(api_main.requests, "get", timeout_get)
+
+    result = api_main._check_ollama("http://localhost:11434")
+    assert result.status == "degraded"
+    assert "timeout" in result.detail
+
+
+def test_health_degraded_when_both_unreachable(
+    monkeypatch, fake_agent: FakeAgentApp
+) -> None:
+    """Si DuckDB et Ollama sont tous deux down, /health renvoie status='degraded'."""
+    monkeypatch.setattr(
+        api_main,
+        "_check_duckdb",
+        lambda path: ComponentHealth(
+            name="duckdb", status="degraded", detail="base absente"
+        ),
+    )
+    monkeypatch.setattr(
+        api_main,
+        "_check_ollama",
+        lambda url: ComponentHealth(
+            name="ollama", status="degraded", detail="timeout"
+        ),
+    )
+
+    app = create_app()
+    app.dependency_overrides[get_agent_app] = lambda: fake_agent
+    with TestClient(app) as c:
+        resp = c.get("/health")
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "degraded"
+    by_name = {c["name"]: c for c in body["components"]}
+    assert by_name["duckdb"]["status"] == "degraded"
+    assert by_name["ollama"]["status"] == "degraded"
+
+
 def test_chat_returns_500_when_agent_explodes(monkeypatch) -> None:
     """Une exception de l'agent devient un 500 sans fuite du message d'origine."""
     app = create_app()
@@ -306,6 +452,25 @@ def test_chat_returns_502_when_agent_yields_no_messages(monkeypatch) -> None:
 
     assert resp.status_code == 502
     assert "aucune réponse" in resp.text
+
+
+def test_get_agent_app_delegates_to_get_app(monkeypatch) -> None:
+    """Vérifie que get_agent_app() appelle bien get_app importée depuis graph."""
+    from src.api import dependencies
+
+    called = False
+
+    def fake_get_app() -> str:
+        nonlocal called
+        called = True
+        return "fake_app"
+
+    monkeypatch.setattr(dependencies, "get_app", fake_get_app)
+
+    result = dependencies.get_agent_app()
+
+    assert called is True
+    assert result == "fake_app"
 
 
 # ---------------------------------------------------------------------------

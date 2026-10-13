@@ -31,3 +31,10 @@ data/pdfs/*.csv
 
 # Cache pytest (regénéré à chaque exécution)
 .pytest_cache/
+
+# Coverage
+.coverage
+*.py,cover
+
+# Agent config (local à chaque développeur)
+.pi/

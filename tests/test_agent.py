@@ -142,6 +142,60 @@ def test_search_regulations_db_error_returns_empty(monkeypatch):
     assert tools.search_regulations("query") == []
 
 
+def test_query_results_query_error_returns_empty(monkeypatch):
+    """Vérifie la dégradation : une erreur DuckDB lors de l'exécution
+    de la requête (pas de la connexion) renvoie [] et ferme la connexion."""
+    import duckdb as duckdb_module
+
+    from src.agent import tools
+
+    columns = ["athlete_name"]
+    conn = FakeConnection(columns, [], error=duckdb_module.Error("query failed"))
+    _patch_connect(monkeypatch, conn)
+
+    rows = tools.query_results(athlete_name="X")
+
+    assert rows == []
+    assert conn.closed is True
+
+
+def test_query_results_partial_filters(monkeypatch):
+    """Vérifie que query_results fonctionne avec un sous-ensemble de filtres
+    (seulement category_name, sans athlete_name ni event_date)."""
+    from src.agent import tools
+
+    columns = ["athlete_name", "category_name", "event_date"]
+    conn = FakeConnection(columns, [
+        ("LU Xiaojun", "77 kg Men", "2021-07-28"),
+    ])
+    _patch_connect(monkeypatch, conn)
+
+    rows = tools.query_results(category_name="77 kg Men")
+
+    assert len(conn.captured_params) == 1
+    assert conn.captured_params[0] == "77 kg Men"
+    assert rows[0]["athlete_name"] == "LU Xiaojun"
+    assert rows[0]["category_name"] == "77 kg Men"
+    assert conn.closed is True
+
+
+def test_compute_athlete_stats_query_error_returns_empty(monkeypatch):
+    """Vérifie la dégradation : une erreur DuckDB lors de la requête
+    compute_athlete_stats renvoie {} et ferme la connexion."""
+    import duckdb as duckdb_module
+
+    from src.agent import tools
+
+    columns = ["athlete_name", "best_snatch"]
+    conn = FakeConnection(columns, [], error=duckdb_module.Error("query failed"))
+    _patch_connect(monkeypatch, conn)
+
+    stats = tools.compute_athlete_stats("X")
+
+    assert stats == {}
+    assert conn.closed is True
+
+
 def test_query_results_applies_dynamic_filters(monkeypatch):
     """Vérifie les filtres dynamiques : conditions ET, ILIKE insensible à
     la casse, filtre de date casté en VARCHAR, ordre des paramètres.
@@ -394,6 +448,21 @@ def test_retrieve_node(monkeypatch):
     assert result == {"retrieved_docs": docs}
 
 
+def test_retrieve_node_error_returns_empty(monkeypatch):
+    """Vérifie que retrieve_node dégrade vers une liste vide si
+    search_regulations lève une exception inattendue."""
+    from src.agent import graph
+
+    def fake_search(query: str, top_k: int = 5) -> list[dict]:
+        raise RuntimeError("unexpected error during retrieval")
+
+    monkeypatch.setattr("src.agent.tools.search_regulations", fake_search)
+
+    result = graph.retrieve_node({"messages": [HumanMessage(content="q")]})
+
+    assert result == {"retrieved_docs": []}
+
+
 def test_agent_node(monkeypatch):
     """Vérifie que agent_node injecte le contexte réglementaire en
     SystemMessage en tête des messages et renvoie la réponse du LLM mocké."""
@@ -504,6 +573,28 @@ def test_tool_node_dispatch_error(monkeypatch):
     tool_message = result["messages"][0]
     assert isinstance(tool_message, ToolMessage)
     assert "error" in json.loads(tool_message.content)
+
+
+def test_get_app_cached_path(monkeypatch) -> None:
+    """Vérifie que get_app() construit l'app au premier appel et la met en cache."""
+    from src.agent import graph
+
+    # Simuler l'état initial : _app = None
+    monkeypatch.setattr(graph, "_app", None)
+
+    called = False
+
+    def fake_build_graph() -> str:
+        nonlocal called
+        called = True
+        return "fake_app"
+
+    monkeypatch.setattr(graph, "build_graph", fake_build_graph)
+
+    result = graph.get_app()
+
+    assert called is True
+    assert result == "fake_app"
 
 
 def test_graph_integration(monkeypatch):
