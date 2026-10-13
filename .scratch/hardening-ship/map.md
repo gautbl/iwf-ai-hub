@@ -18,6 +18,8 @@ No K8s, no Helm, no CI/CD, no PySpark, no MinIO — those are deferred or option
 
 - **01-align-deps**: `pyproject.toml` est la source de vérité unique avec bornes inférieures souples. `requirements/base.txt` devient un lockfile-snapshot commenté. `numpy<2` supprimé, `pandas<2.2` remplacé, `duckdb==0.10.2` remplacé, `langchain` éclaté en `langchain-core` + `langchain-ollama`. Dependencies manquantes ajoutées (pydantic-settings, langchain-core, langchain-ollama, langgraph-checkpoint-duckdb). 58 tests verts.
 
+- **04-warnings-and-tooling**: dev tooling installé (black, ruff, mypy, pre-commit) via `pip install -e .[dev]`. Configs ajoutées dans `pyproject.toml` : `[tool.ruff]`, `[tool.mypy]`, `[tool.black]`. Warnings amont (LangChainPendingDeprecationWarning, anyio DeprecationWarning) filtrées via pytest `filterwarnings`. `pytest -W error` passe : 81 tests, 0 erreurs. Patch de `LC_REVIVER` dans `src/agent/graph.py` avec `allowed_objects='core'` explicite.
+
 ## Not yet specified
 
 - Real end-to-end smoke test (requires Docker + Ollama on this machine) — blocked on environment setup, not a code decision

@@ -13,6 +13,8 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-6 : 
 - Logs via structlog, never `print()`
 - Config via pydantic-settings + ConfigMap K8s
 - One test per functional unit, pytest
+- Formatting & linting via black + ruff (config dans `pyproject.toml`)
+- Type checking via mypy sur le code source (`src/`)
 
 ## Forbidden (sovereignty)
 - No managed cloud services (BigQuery, SageMaker, Bedrock)
@@ -30,6 +32,9 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-6 : 
 
 ## Key Commands
 - **Tests** : `pytest tests/`
+- **Lint** : `ruff check src/ tests/`
+- **Format** : `black src/ tests/`
+- **Types** : `mypy src/`
 - **ETL** : `docker-compose up -d` → Airflow UI http://localhost:8080, DAG `iwf_performance_pipeline`
 - **dbt** (inside container) : `cd /opt/airflow/dbt && dbt run && dbt test`
 
