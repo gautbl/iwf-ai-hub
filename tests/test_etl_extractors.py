@@ -45,13 +45,17 @@ def test_data_loader_with_event_id(tmp_path) -> None:
 
         # Idempotence : réinsérer le même event_id remplace
         loader.load_to_duckdb(df, "event_test", event_id=42)
-        count = conn.execute("SELECT count(*) FROM raw_event_test").fetchone()[0]
+        row = conn.execute("SELECT count(*) FROM raw_event_test").fetchone()
+        assert row is not None
+        count = row[0]
         assert count == 2
 
         # event_id différent s'ajoute
         df2 = DataFrame({"col_a": [30], "col_b": ["z"]})
         loader.load_to_duckdb(df2, "event_test", event_id=99)
-        count = conn.execute("SELECT count(*) FROM raw_event_test").fetchone()[0]
+        row = conn.execute("SELECT count(*) FROM raw_event_test").fetchone()
+        assert row is not None
+        count = row[0]
         assert count == 3
     finally:
         conn.close()

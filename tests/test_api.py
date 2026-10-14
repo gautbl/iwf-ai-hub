@@ -195,6 +195,7 @@ def test_chat_preserves_explicit_session_id(
 
     payload, config = fake_agent.invocations[-1]
     assert payload["session_id"] == "sess-42"
+    assert config is not None
     assert config["configurable"]["thread_id"] == "sess-42"
 
 

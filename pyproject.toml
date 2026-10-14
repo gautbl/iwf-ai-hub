@@ -98,6 +98,7 @@ module = [
     "pypdf.*",
     "pandas.*",
     "ormsgpack.*",
+    "reportlab.*",
 ]
 ignore_missing_imports = true
 
@@ -117,9 +118,9 @@ line-length = 88
 pythonpath = ["."]
 addopts = "-ra --strict-markers"
 filterwarnings = [
-    # Avertissements amont inoffensifs qu'on ne peut pas corriger.
-    #   - LangChainPendingDeprecationWarning (hériite PendingDeprecationWarning)
-    #   - anyio.abc.BlockingPortal (starlette 1.6 via anyio >=4.9)
-    'ignore:.*allowed_objects.*:PendingDeprecationWarning',
-    'ignore:.*anyio.abc.BlockingPortal.*',
+    # error d'abord (LIFO : ajouté premier → vérifié en dernier) ;
+    'error',
+    # puis les ignores spécifiques pour les avertissements amont (vérifiés avant error).
+    'ignore::PendingDeprecationWarning:langgraph',
+    'ignore::DeprecationWarning:starlette.testclient',
 ]
