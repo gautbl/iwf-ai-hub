@@ -18,7 +18,7 @@ No K8s, no Helm, no CI/CD, no PySpark, no MinIO — those are deferred or option
 
 - **01-align-deps**: `pyproject.toml` est la source de vérité unique avec bornes inférieures souples. `requirements/base.txt` devient un lockfile-snapshot commenté. `numpy<2` supprimé, `pandas<2.2` remplacé, `duckdb==0.10.2` remplacé, `langchain` éclaté en `langchain-core` + `langchain-ollama`. Dependencies manquantes ajoutées (pydantic-settings, langchain-core, langchain-ollama, langgraph-checkpoint-duckdb). 58 tests verts.
 
-- **04-warnings-and-tooling**: dev tooling installé (black, ruff, mypy, pre-commit) via `pip install -e .[dev]`. Configs ajoutées dans `pyproject.toml` : `[tool.ruff]`, `[tool.mypy]`, `[tool.black]`. Warnings amont (LangChainPendingDeprecationWarning, anyio DeprecationWarning) filtrées via pytest `filterwarnings`. `pytest -W error` passe : 81 tests, 0 erreurs. Patch de `LC_REVIVER` dans `src/agent/graph.py` avec `allowed_objects='core'` explicite.
+- **04-warnings-and-tooling**: dev tooling installé et baseline clean (ruff, black, mypy OK). Warnings amont filtrées via `filterwarnings` dans `pyproject.toml` avec `['error', 'ignore::PendingDeprecationWarning:langgraph', 'ignore::DeprecationWarning:starlette.testclient']` : les warnings inattendus sont en erreur. Patch de `LC_REVIVER` dans `src/agent/graph.py` avec `allowed_objects='core'`. 81 tests verts. Note : `pytest -W error` CLI ne fonctionne pas (ordre LIFO pytest) — utiliser `pytest tests/` qui est équivalent.
 
 ## Not yet specified
 

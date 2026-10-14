@@ -31,8 +31,8 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-6 : 
 - **PySpark mirror (optional)**: Silver transformation + parity vs dbt
 
 ## Key Commands
-- **Tests** : `pytest tests/`
-- **Tests (strict, -W error)** : `python scripts/run_tests.py`
+- **Tests** : `pytest tests/` (les warnings inattendus sont en erreur via `filterwarnings` dans `pyproject.toml`)
+- **Lint + types + tests** : `ruff check src/ tests/ && black --check src/ tests/ && mypy src/ && pytest tests/`
 - **Lint** : `ruff check src/ tests/`
 - **Format** : `black src/ tests/`
 - **Types** : `mypy src/`
@@ -46,13 +46,17 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-6 : 
 
 ## Warnings et filtrage pytest
 
-Deux avertissements amont inoffensifs sont filtrés :
-- `LangChainPendingDeprecationWarning` (langgraph, `JsonPlusSerializer`) — `ignore::PendingDeprecationWarning:langgraph`
-- `DeprecationWarning` anyio `BlockingPortal` (starlette testclient) — `ignore::DeprecationWarning:starlette.testclient`
+Deux avertissements amont inoffensifs sont filtrés (dans `pyproject.toml` sous `[tool.pytest.ini_options] filterwarnings`) :
+- `LangChainPendingDeprecationWarning` (langgraph, `JsonPlusSerializer`) → `ignore::PendingDeprecationWarning:langgraph`
+- `DeprecationWarning` anyio `BlockingPortal` (starlette testclient) → `ignore::DeprecationWarning:starlette.testclient`
 
-**Note** : `pytest -W error tests/` ne fonctionne pas directement à cause de l'ordre LIFO
-de pytest (le flag CLI est vérifié avant les filtres config). Utiliser plutôt
-`python scripts/run_tests.py` qui équivaut à `-W error` avec les ignores nécessaires.
+L'ordre des filtres est : `['error', 'ignore::PendingDeprecationWarning:langgraph', 'ignore::DeprecationWarning:starlette.testclient']`.
+Les warnings inattendus sont donc en erreur, et les deux amont sont ignorés.
+
+> **Note** : `pytest -W error tests/` ne fonctionne pas directement — l'ordre LIFO
+de pytest fait que le flag CLI est vérifié avant les ignores du config.
+> Utiliser `pytest tests/` (sans `-W`) : le `filterwarnings = ['error', ...]` fournit
+> une protection équivalente.
 
 ## Environment Setup
 - `.venv` exists on host ; deps from `requirements/base.txt`
