@@ -1,14 +1,14 @@
-# 03: Page HTML de chat
+# 03: HTML chat page
 
-**What to build:** Un utilisateur ouvre `http://localhost:8000`, voit un champ texte, pose une question sur les regles IWF ou les resultats, recoit une reponse. La session persiste entre les messages.
+**What to build:** A user opens `http://localhost:8000`, sees a text field, asks a question about IWF rules or results, gets a response. The session persists across messages.
 
-**Blocked by:** 01 (Dockeriser l'API)
+**Blocked by:** 01 (Dockerise the API)
 
 **Status:** ready-for-agent
 
-- [ ] Creer `src/api/static/index.html` (champ texte, bouton envoyer, zone reponse, session_id)
-- [ ] Ajouter route `GET /` dans `src/api/main.py` qui sert la page HTML
-- [ ] Appels `POST /chat` via `fetch()` en JavaScript
-- [ ] Design sobre et responsive
-- [ ] Test : `GET /` retourne 200 avec `text/html`
-- [ ] Test : la page HTML contient les elements du formulaire
+- [ ] Create `src/api/static/index.html` (text field, send button, response area, session_id)
+- [ ] Add route `GET /` in `src/api/main.py` that serves the HTML page
+- [ ] Calls `POST /chat` via `fetch()` in JavaScript
+- [ ] Clean and responsive design
+- [ ] Test: `GET /` returns 200 with `text/html`
+- [ ] Test: the HTML page contains form elements

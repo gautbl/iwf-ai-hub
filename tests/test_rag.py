@@ -32,7 +32,7 @@ def test_load_pdfs_success(tmp_path):
 
 def test_chunk_output_schema(tmp_path):
     """
-    Vérifie que chaque chunk expose les 5 champs requis avec les bons types.
+    Checks that each chunk exposes the 5 required fields with the correct types.
     """
     from reportlab.pdfgen import canvas
 
@@ -71,8 +71,8 @@ def test_chunk_output_schema(tmp_path):
 
 def test_chunk_article_detection(tmp_path):
     """
-    Vérifie l'isolation de la détection d'article : un chunk contenant
-    "Article 5" expose bien "Article 5" dans son champ article.
+    Checks the isolation of article detection: a chunk containing
+    "Article 5" exposes "Article 5" in its article field.
     """
     from reportlab.pdfgen import canvas
 
@@ -95,15 +95,15 @@ def test_chunk_article_detection(tmp_path):
         page=docs[0]["metadata"]["page"],
     )
 
-    # 3. Assert: détection d'article uniquement
+    # 3. Assert: article detection only
     assert len(chunks) >= 1
     assert chunks[0]["article"] == "Article 5"
 
 
 def test_embed_calls_ollama_local(monkeypatch):
     """
-    Vérifie que embed_text appelle bien l'API Ollama locale avec le bon
-    endpoint, le bon body et le bon timeout.
+    Checks that embed_text calls the local Ollama API with the correct
+    endpoint, body and timeout.
     """
     from src.pipelines.embeddings import EmbeddingGenerator
 
@@ -136,7 +136,7 @@ def test_embed_calls_ollama_local(monkeypatch):
 
 def test_embed_dimension_error(monkeypatch):
     """
-    Vérifie qu'un vecteur de dimension 384 déclenche une ValueError.
+    Checks that a vector of dimension 384 raises a ValueError.
     """
     from src.pipelines.embeddings import EmbeddingGenerator
 
@@ -160,7 +160,7 @@ def test_embed_dimension_error(monkeypatch):
 
 def test_embed_connection_error(monkeypatch):
     """
-    Vérifie qu'une ConnectionError vers Ollama est propagée.
+    Checks that a ConnectionError to Ollama is propagated.
     """
     import requests
 
@@ -182,7 +182,7 @@ def test_embed_connection_error(monkeypatch):
 
 def test_embed_timeout(monkeypatch):
     """
-    Vérifie qu'un Timeout Ollama est journalisé puis propagé.
+    Checks that an Ollama Timeout is logged then propagated.
     """
     import requests
 
@@ -202,7 +202,7 @@ def test_embed_timeout(monkeypatch):
 
 def test_embed_http_error(monkeypatch):
     """
-    Vérifie qu'une réponse HTTP 500 déclenche une RuntimeError.
+    Checks that an HTTP 500 response triggers a RuntimeError.
     """
     from src.pipelines.embeddings import EmbeddingGenerator
 
@@ -226,7 +226,7 @@ def test_embed_http_error(monkeypatch):
 
 def test_retrieve_returns_list(monkeypatch):
     """
-    Vérifie le type de retour et les champs présents dans chaque résultat.
+    Checks the return type and presented fields in each result.
     """
     from src.pipelines import retrieval
 
@@ -278,7 +278,7 @@ def test_retrieve_returns_list(monkeypatch):
 
 def test_retrieve_top_k(monkeypatch):
     """
-    Vérifie que top_k est bien transmis à la requête SQL (LIMIT).
+    Checks that top_k is correctly passed to the SQL query (LIMIT).
     """
     from src.pipelines import retrieval
 
@@ -314,7 +314,7 @@ def test_retrieve_top_k(monkeypatch):
 
 def test_retrieve_ollama_unavailable(monkeypatch):
     """
-    Vérifie le comportement dégradé : Ollama indisponible => liste vide.
+    Checks the degraded behaviour: Ollama unavailable => empty list.
     """
     import requests
 
@@ -336,8 +336,8 @@ def test_retrieve_ollama_unavailable(monkeypatch):
 
 def test_retrieve_runtime_error(monkeypatch):
     """
-    Vérifie le comportement dégradé : une RuntimeError (ex: connexion DuckDB)
-    est interceptée et retrieve() retourne une liste vide.
+    Checks the degraded behaviour: a RuntimeError (e.g. DuckDB connection)
+    is intercepted and retrieve() returns an empty list.
     """
     from src.pipelines import retrieval
 
@@ -361,8 +361,8 @@ def test_retrieve_runtime_error(monkeypatch):
 
 def test_retrieve_value_error(monkeypatch):
     """
-    Vérifie le comportement dégradé : une ValueError (ex: embedding invalide)
-    est interceptée et retrieve() retourne une liste vide.
+    Checks the degraded behaviour: a ValueError (e.g. invalid embedding)
+    is intercepted and retrieve() returns an empty list.
     """
     from src.pipelines import retrieval
 
@@ -386,7 +386,7 @@ def test_retrieve_value_error(monkeypatch):
 
 def test_load_pdf_extracts_text(tmp_path):
     """
-    Vérifie l'extraction du texte et le numéro de page sur un PDF multipage.
+    Checks text extraction and page number on a multi-page PDF.
     """
     from reportlab.pdfgen import canvas
 
@@ -407,7 +407,7 @@ def test_load_pdf_extracts_text(tmp_path):
 
 def test_load_pdf_file_not_found():
     """
-    Vérifie qu'un dossier inexistant lève une FileNotFoundError.
+    Checks that a non-existent directory raises a FileNotFoundError.
     """
     with pytest.raises(FileNotFoundError):
         load_pdfs("this/folder/does/not/exist")
@@ -416,7 +416,7 @@ def test_load_pdf_file_not_found():
 @pytest.fixture
 def rag_test_db():
     """
-    Prépare la table chunks dans la DB de test et la nettoie après usage.
+    Sets up the chunks table in the test DB and cleans up after.
     """
     import duckdb
 
@@ -442,8 +442,8 @@ def rag_test_db():
 
 def test_pipeline_integration(tmp_path, monkeypatch, rag_test_db):
     """
-    Pipeline complet load -> chunk -> embed -> store avec Ollama mocké et
-    vérification du contenu stocké dans DuckDB.
+    Full pipeline load -> chunk -> embed -> store with mocked Ollama and
+    verification of stored content in DuckDB.
     """
     import duckdb
     from reportlab.pdfgen import canvas
@@ -451,13 +451,13 @@ def test_pipeline_integration(tmp_path, monkeypatch, rag_test_db):
     from src.pipelines.chunking import JuridicalChunker
     from src.pipelines.embeddings import EmbeddingGenerator
 
-    # 1. PDF de test généré avec reportlab
+    # 1. Test PDF generated with reportlab
     pdf_path = tmp_path / "iwf_rules.pdf"
     c = canvas.Canvas(str(pdf_path))
     c.drawString(100, 750, "Article 5 - Clean and Jerk must be performed.")
     c.save()
 
-    # 2. Mock Ollama (jamais d'instance réelle)
+    # 2. Mock Ollama (never a real instance)
     class FakeResponse:
         status_code = 200
 
@@ -492,7 +492,7 @@ def test_pipeline_integration(tmp_path, monkeypatch, rag_test_db):
     inserted = generator.store_chunks(chunks)
     assert inserted == len(chunks)
 
-    # 5. Vérification en base
+    # 5. DB verification
     conn = duckdb.connect(rag_test_db)
     conn.execute("INSTALL vss;")
     conn.execute("LOAD vss;")
@@ -508,8 +508,8 @@ def test_pipeline_integration(tmp_path, monkeypatch, rag_test_db):
 
 def test_embed_idempotence(monkeypatch, rag_test_db):
     """
-    Vérifie que store_chunks est idempotent : réinsérer le même chunk id
-    ne crée pas de doublon en base.
+    Checks that store_chunks is idempotent: re-inserting the same chunk id
+    does not create a duplicate in the DB.
     """
     from uuid import uuid4
 
@@ -555,8 +555,8 @@ def test_embed_idempotence(monkeypatch, rag_test_db):
 
 
 def test_retrieve_duckdb_error_is_re_raised(monkeypatch) -> None:
-    """Vérifie que retrieve() laisse remonter une duckdb.Error (la couche
-    agent la rattrape)."""
+    """Checks that retrieve() lets a duckdb.Error propagate (the agent
+    layer catches it)."""
     import duckdb as duckdb_module
 
     from src.pipelines import retrieval
@@ -598,8 +598,8 @@ def test_retrieve_duckdb_error_is_re_raised(monkeypatch) -> None:
 def test_retrieve_returns_empty_on_error(
     monkeypatch, embed_error: Exception | None, query_error: Exception | None
 ) -> None:
-    """Vérifie la dégradation : RuntimeError ou ValueError pendant
-    l'embed_text ou la requête DuckDB renvoie une liste vide."""
+    """Checks the degraded behaviour: RuntimeError or ValueError during
+    embed_text or the DuckDB query returns an empty list."""
     from src.pipelines import retrieval
 
     class FakeGenerator:

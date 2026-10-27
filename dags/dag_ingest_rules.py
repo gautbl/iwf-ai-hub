@@ -22,16 +22,16 @@ PDF_URLS = [
 ]
 DB_PATH = "/data/duckdb/iwf_hub.duckdb"
 PDF_DIR = "/data/pdfs"
-OLLAMA_URL = "http://ollama:11434"  # Ollama local, réseau Docker
+OLLAMA_URL = "http://ollama:11434"  # Local Ollama, Docker network
 EMBEDDING_MODEL = "nomic-embed-text"
 INIT_SQL_PATH = "/opt/airflow/src/db/init.sql"
 
 def init_database():
-    """Initialise la base DuckDB (extension VSS, table chunks, index HNSW)."""
+    """Initialises the DuckDB database (VSS extension, chunks table, HNSW index)."""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
     if not os.path.exists(INIT_SQL_PATH):
-        raise FileNotFoundError(f"init.sql introuvable: {INIT_SQL_PATH}")
+        raise FileNotFoundError(f"init.sql not found: {INIT_SQL_PATH}")
 
     with open(INIT_SQL_PATH, encoding="utf-8") as f:
         init_sql = f.read()
@@ -45,7 +45,7 @@ def init_database():
     logger.info("db_initialized", db_path=DB_PATH)
 
 def download_pdfs():
-    """Télécharge les PDFs réglementaires IWF depuis le site officiel."""
+    """Downloads IWF regulation PDFs from the official site.""""
     os.makedirs(PDF_DIR, exist_ok=True)
     downloaded = []
 
@@ -62,43 +62,43 @@ def download_pdfs():
         except Exception as e:
             logger.warning("pdf_download_failed", url=url, error=str(e))
 
-    return f"Téléchargés: {len(downloaded)} PDFs"
+    return f"Downloaded: {len(downloaded)} PDFs"
 
 def process_and_chunk():
-    """Extrait le texte des PDFs et les découpe en chunks réglementaires."""
+    """Extracts text from PDFs and splits into regulation chunks.""""
     chunker = JuridicalChunker(
         chunk_size=512,
         chunk_overlap=50,
         separators=["\n\n", "\n", ".", " ", ""]
     )
 
-    # Traiter tous les PDFs
+    # Process all PDFs
     all_chunks = []
     documents = load_pdfs(PDF_DIR)
     for doc in documents:
         source = doc["metadata"]["source"]
         page = doc["metadata"]["page"]
         try:
-            # page est propagée depuis load_pdfs ; article est détecté
-            # puis stocké dans chaque chunk par le chunker.
+            # page propagates from load_pdfs; article is detected
+            # then stored in each chunk by the chunker.
             chunks = chunker.chunk_text(doc["text"], source=source, page=page)
             all_chunks.extend(chunks)
             logger.info("chunked", source=source, page=page, count=len(chunks))
         except Exception as e:
             logger.warning("chunk_failed", source=source, page=page, error=str(e))
 
-    # Sauvegarder les chunks temporairement pour la tâche suivante
+    # Save chunks temporarily for the next task
     chunks_file = os.path.join(PDF_DIR, "chunks_temp.json")
     with open(chunks_file, 'w', encoding='utf-8') as f:
         json.dump(all_chunks, f, ensure_ascii=False)
 
-    return f"Chunks créés: {len(all_chunks)}"
+    return f"Chunks created: {len(all_chunks)}"
 
 def generate_embeddings():
-    """Génère les embeddings via Ollama local et les stocke dans DuckDB VSS."""
+    """Generates embeddings via local Ollama and stores in DuckDB VSS."""
     chunks_file = os.path.join(PDF_DIR, "chunks_temp.json")
     if not os.path.exists(chunks_file):
-        raise FileNotFoundError("Fichier chunks non trouvé. Exécutez process_and_chunk d'abord.")
+        raise FileNotFoundError("Chunks file not found. Run process_and_chunk first.")
 
     with open(chunks_file, 'r', encoding='utf-8') as f:
         chunks = json.load(f)
@@ -109,20 +109,20 @@ def generate_embeddings():
         model_name=EMBEDDING_MODEL,
     )
 
-    # article et page sont déjà portés par chaque chunk
+    # article and page are already carried by each chunk
     inserted = embedder.store_chunks(chunks, table_name="chunks")
 
-    # Nettoyage
+    # Cleanup
     os.remove(chunks_file)
 
-    return f"{inserted} chunks vectorisés et stockés"
+    return f"{inserted} chunks vectorised and stored"
 
 with DAG(
     dag_id='iwf_rag_pipeline',
     start_date=datetime(2023, 1, 1),
-    schedule_interval='@monthly',  # Moins fréquent que l'ETL
+    schedule_interval='@monthly',  # Less frequent than the ETL
     catchup=False,
-    tags=['iwf', 'rag', 'reglementation']
+    tags=['iwf', 'rag', 'regulation']
 ) as dag:
 
     init_db_task = PythonOperator(

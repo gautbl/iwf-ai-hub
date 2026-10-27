@@ -1,27 +1,27 @@
--- Initialisation de la base DuckDB pour IWF AI Hub
--- Installation et chargement de l'extension VSS (Vector Similarity Search)
+-- Initialises the DuckDB database for IWF AI Hub
+-- Install and load the VSS extension (Vector Similarity Search)
 INSTALL vss;
 LOAD vss;
 
--- Requis pour créer un index HNSW sur une base DuckDB persistante (fichier).
--- Le réglage provient de l'extension vss, il doit donc suivre LOAD vss.
+-- Needed to build an HNSW index on a persistent DuckDB file.
+-- This setting comes from the vss extension, so it must follow LOAD vss.
 SET hnsw_enable_experimental_persistence = true;
 
--- Table de stockage des chunks réglementaires vectorisés (RAG).
--- Source de vérité du schéma : init.sql (ne pas recréer la table ailleurs).
+-- Table for storing vectorised regulation chunks (RAG).
+-- Schema source of truth: init.sql. Do not recreate the table elsewhere.
 CREATE TABLE IF NOT EXISTS chunks (
     id          UUID DEFAULT gen_random_uuid(),
-    source      VARCHAR NOT NULL,    -- nom du PDF
-    article     VARCHAR,             -- numéro d'article IWF
+    source      VARCHAR NOT NULL,    -- PDF file name
+    article     VARCHAR,             -- IWF article number
     page        INTEGER,
     chunk_text  TEXT NOT NULL,
-    embedding   FLOAT[768],          -- dimension du modèle Ollama nomic-embed-text
+    embedding   FLOAT[768],          -- dimension of the Ollama nomic-embed-text model
     created_at  TIMESTAMP DEFAULT now()
 );
 
--- Index HNSW pour la recherche vectorielle par similarité cosinus.
--- ATTENTION : l'index HNSW ne persiste pas entre les sessions DuckDB.
--- Il doit être rechargé (recréé) au démarrage de l'application.
+-- HNSW index for vector similarity search (cosine).
+-- WARNING: the HNSW index does not persist across DuckDB sessions.
+-- It must be rebuilt on application startup.
 CREATE INDEX IF NOT EXISTS idx_chunks ON chunks
     USING HNSW (embedding)
     WITH (metric = 'cosine', ef_construction = 200, M = 16);

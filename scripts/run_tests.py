@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-"""Exécute les tests avec -W error, en ignorant les avertissements amont
-inoffensifs que pytest ne peut pas filtrer via filterwarnings (LIFO).
+"""Runs tests with -W error, ignoring upstream harmless
+warnings that pytest cannot filter via filterwarnings (LIFO).
 
-Usage :
-    python scripts/run_tests.py [options pytest supplémentaires]
+Usage:
+    python scripts/run_tests.py [additional pytest options]
 
-Voir .scratch/hardening-ship/issues/04-warnings-and-tooling.md
-pour le contexte du contournement.
+See .scratch/hardening-ship/issues/04-warnings-and-tooling.md
+for the workaround context.
 """
 
 import subprocess

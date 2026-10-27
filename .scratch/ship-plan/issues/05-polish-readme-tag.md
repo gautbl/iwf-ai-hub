@@ -1,14 +1,14 @@
-# 05: Polish README et tag v1.0.0-alpha.1
+# 05: Polish README and tag v1.0.0-alpha.1
 
-**What to build:** README a jour, tag git pose, livrable pret a montrer au client. Un nouveau developpeur ou client suit les instructions et lance le produit.
+**What to build:** README up to date, git tag set, deliverable ready to show the client. A new developer or client follows the instructions and runs the product.
 
-**Blocked by:** 01 (Dockeriser l'API), 02 (Scripts seed startup), 03 (Page HTML chat)
+**Blocked by:** 01 (Dockerise the API), 02 (Seed and startup scripts), 03 (HTML chat page)
 
 **Status:** ready-for-agent
 
-- [ ] Mettre a jour README.md avec instructions one-click `docker-compose up`
-- [ ] Ajouter section "Demo client" avec URL, exemples de questions
-- [ ] Ajouter tableau des endpoints (GET /health, POST /chat, GET /)
-- [ ] Creer CHANGELOG.md ou release notes
-- [ ] Appliquer le tag `v1.0.0-alpha.1` apres validation des tests
-- [ ] Verifier : `pytest tests/` = 81+ tests verts
+- [ ] Update README.md with one-click `docker-compose up` instructions
+- [ ] Add "Client demo" section with URL, question examples
+- [ ] Add endpoint table (GET /health, POST /chat, GET /)
+- [ ] Create CHANGELOG.md or release notes
+- [ ] Apply tag `v1.0.0-alpha.1` after test validation
+- [ ] Verify: `pytest tests/` = 81+ tests green

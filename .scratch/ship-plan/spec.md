@@ -2,147 +2,147 @@ Status: ready-for-agent
 
 ## Problem Statement
 
-L'IWF AI Hub a 81 tests verts et un pipeline complet. Mais il n'a pas d'interface client, pas de demarrage one-click, et l'API tourne dans un venv hote. Un client ne peut pas essayer le produit sans lancer deux processus. La demo n'est pas prete.
+The IWF AI Hub has 81 green tests and a complete pipeline. But it has no client interface, no one-click startup, and the API runs in a host venv. A client cannot try the product without starting two processes. The demo is not ready.
 
 ## Solution
 
-Un demarrage one-click avec `docker-compose up` qui lance l'API, Ollama et Airflow. Une page de chat HTML servie par l'API a la racine `/`. Des scripts de seed qui telechargent les donnees IWF publiques. Le tout tague `v1.0.0-alpha.1`.
+A one-click startup with `docker-compose up` that starts the API, Ollama and Airflow. An HTML chat page served by the API at root `/`. Seed scripts that download public IWF data. All tagged `v1.0.0-alpha.1`.
 
 ## User Stories
 
-1. En tant que client IWF, je veux un seul `docker-compose up` pour voir le produit fonctionner, pour ne pas connaitre l'architecture interne.
+1. As an IWF client, I want a single `docker-compose up` to see the product work, so I do not need to know the internal architecture.
 
-2. En tant que client IWF, je veux une page de chat a `http://localhost:8000`, pour poser des questions sans outil technique.
+2. As an IWF client, I want a chat page at `http://localhost:8000`, to ask questions without a technical tool.
 
-3. En tant qu'entraineur, je veux poser des questions sur les reglementations IWF via le chat, pour obtenir des reponses sourcees rapidement.
+3. As a coach, I want to ask questions about IWF regulations via the chat, to get sourced answers quickly.
 
-4. En tant qu'analyste, je veux interroger les resultats de competition via le chat, pour analyser les performances sans SQL.
+4. As an analyst, I want to query competition results via the chat, to analyse performance without SQL.
 
-5. En tant que client, je veux que la conversation persiste entre les messages, pour poser des questions de suivi.
+5. As a client, I want the conversation to persist across messages, to ask follow-up questions.
 
-6. En tant que client, je veux voir les donnees reelles de l'IWF, pour valider le produit.
+6. As a client, I want to see real IWF data, to validate the product.
 
-7. En tant que client, je veux que les modeles Ollama soient telecharges automatiquement, pour ne pas les installer manuellement.
+7. As a client, I want Ollama models to download automatically, so I do not install them manually.
 
-8. En tant que developpeur, je veux que les donnees de demo soient seedees automatiquement.
+8. As a developer, I want demo data to seed automatically.
 
-9. En tant que developpeur, je veux un README a jour avec les instructions one-click.
+9. As a developer, I want an up-to-date README with one-click instructions.
 
-10. En tant que client, je veux que l'index VSS se reconstruise automatiquement, pour que le RAG reponde immediatement.
+10. As a client, I want the VSS index to rebuild automatically, so the RAG responds immediately.
 
-11. En tant que developpeur, je veux que la base de test soit recreee par pytest, pour ne pas versionner un binaire.
+11. As a developer, I want the test DB to be recreated by pytest, so a binary is not versioned.
 
 ## Implementation Decisions
 
-### 1. Dockerisation de l'API FastAPI
+### 1. Dockerise the FastAPI API
 
-Un nouveau Dockerfile (`Dockerfile.api`) base sur `python:3.11-slim` installe les dependances depuis `pyproject.toml`. Il copie ensuite le code source `src/`.
+A new Dockerfile (`Dockerfile.api`) based on `python:3.11-slim` installs dependencies from `pyproject.toml`. It then copies the source code `src/`.
 
-Le service `api` est ajoute a `docker-compose.yaml`. Il partage le volume `data/duckdb` avec le service `airflow`. Il depend de `ollama`. Les variables d'environnement sont passees via le bloc `environment:`.
+The `api` service is added to `docker-compose.yaml`. It shares the `data/duckdb` volume with the `airflow` service. It depends on `ollama`. Environment variables are passed via the `environment:` block.
 
-Le port 8000 est expose. Le point d'entree est `uvicorn src.api.main:app --host 0.0.0.0 --port 8000`.
+Port 8000 is exposed. The entry point is `uvicorn src.api.main:app --host 0.0.0.0 --port 8000`.
 
-Le Dockerfile Airflow existant (`Dockerfile`) est renomme `Dockerfile.airflow`. Le service `airflow` pointe vers `dockerfile: Dockerfile.airflow`.
+The existing Airflow Dockerfile (`Dockerfile`) is renamed `Dockerfile.airflow`. The `airflow` service points to `dockerfile: Dockerfile.airflow`.
 
-### 2. Scripts de seed et startup
+### 2. Seed and startup scripts
 
-Deux scripts shell dans `scripts/` :
+Two shell scripts in `scripts/` :
 
 **`scripts/seed_demo.sh`** :
-- Telecharge les PDF IWF depuis le site officiel.
-- Telecharge les CSV de resultats depuis OpenWeightlifting.
-- Lance le chunking et les embeddings via Ollama.
+- Downloads IWF PDFs from the official site.
+- Downloads result CSVs from OpenWeightlifting.
+- Runs chunking and embeddings via Ollama.
 
 **`scripts/startup.sh`** :
-- Verifie que `data/duckdb/` existe.
-- Verifie les modeles Ollama et les pull si absents.
-- Reconstruit l'index HNSW VSS sur la table `chunks`.
+- Checks that `data/duckdb/` exists.
+- Checks Ollama models and pulls them if absent.
+- Rebuilds the HNSW VSS index on the `chunks` table.
 
-Le script de startup est idempotent. Il s'execute au demarrage du conteneur.
+The startup script is idempotent. It runs on container startup.
 
-### 3. Page HTML de chat
+### 3. HTML chat page
 
-Une page unique `src/api/static/index.html` servie par FastAPI a la racine `/` via une route `GET /`.
+A single page `src/api/static/index.html` served by FastAPI at root `/` via a `GET /` route.
 
-Fonctionnalites :
-- Champ de saisie pour la question.
-- Bouton "Envoyer".
-- Zone de reponse qui affiche le texte de l'agent.
-- Affichage du `session_id` courant.
-- Appels `POST /chat` via `fetch()`.
-- Design sobre et responsive.
+Features :
+- Text input for the question.
+- "Send" button.
+- Response area that shows the agent text.
+- Display of the current `session_id`.
+- Calls `POST /chat` via `fetch()`.
+- Clean and responsive design.
 
-Le designer agent sera consulte pour le rendu visuel.
+The designer agent will be consulted for the visual rendering.
 
-### 4. GLOSSARY.md et ADR
+### 4. GLOSSARY.md and ADR
 
-**`GLOSSARY.md`** — glossaire du domaine IWF :
-- **Athlete** : personne inscrite a une competition.
-- **Competition** : evenement IWF avec des athletes.
-- **Resultat** : performance d'un athlete.
-- **Reglementation** : document PDF avec les regles IWF.
-- **Session** : conversation unique avec l'agent.
-- **Chunk** : extrait de texte vectorise pour le RAG.
+**`GLOSSARY.md`** — IWF domain glossary :
+- **Athlete** : a person registered for a competition.
+- **Competition** : an IWF event with athletes.
+- **Result** : an athlete performance.
+- **Regulation** : a PDF document with IWF rules.
+- **Session** : a single conversation with the agent.
+- **Chunk** : a vectorised text segment for the RAG.
 
-**`docs/adr/0001-architecture-souveraine.md`** — pourquoi tout est local :
-- Contexte : souverainete des donnees IWF, pas de cloud.
-- Decision : Ollama local, DuckDB fichier, aucun service managed.
-- Alternatives rejetees : OpenAI, Pinecone, BigQuery.
+**`docs/adr/0001-sovereign-architecture.md`** — why everything is local :
+- Context: sovereignty of IWF data, no cloud.
+- Decision: local Ollama, DuckDB file, no managed service.
+- Rejected alternatives: OpenAI, Pinecone, BigQuery.
 
-**`docs/adr/0002-duckdb-vss-pour-rag.md`** — pourquoi DuckDB VSS :
-- Contexte : besoin de recherche vectorielle sans nouvelle infra.
-- Decision : extension VSS de DuckDB.
-- Trade-off : l'index ne persiste pas entre sessions.
+**`docs/adr/0002-duckdb-vss-for-rag.md`** — why DuckDB VSS :
+- Context: need for vector search without new infrastructure.
+- Decision: DuckDB VSS extension.
+- Trade-off: the index does not persist across sessions.
 
-### 5. README et tag
+### 5. README and tag
 
-README mis a jour :
-- Instructions `docker-compose up`.
-- Section "Demo client" avec URL et exemples.
-- Tableau des endpoints (GET /health, POST /chat, GET /).
-- Tag `v1.0.0-alpha.1` apres validation.
+README updated :
+- `docker-compose up` instructions.
+- "Client demo" section with URL and examples.
+- Endpoint table (GET /health, POST /chat, GET /).
+- Tag `v1.0.0-alpha.1` after validation.
 
-Le fichier `test_iwf_hub.duckdb` est ajoute a `.gitignore`.
+The file `test_iwf_hub.duckdb` is added to `.gitignore`.
 
 ### Seams de test
 
-Les tests existants couvrent l'API (TestClient), l'agent (mock LLM), et le RAG (mock Ollama). Aucune nouvelle seam n'est necessaire :
+Existing tests cover the API (TestClient), the agent (mock LLM), and the RAG (mock Ollama). No new seam is needed :
 
-- Tests API : 27 tests dans `test_api.py`. La route `GET /` sera testee avec le meme TestClient.
-- Tests conteneur : optionnel, pas inclus.
-- Tests seed : pas de test unitaire pour les scripts shell.
+- API tests: 27 tests in `test_api.py`. The `GET /` route will be tested with the same TestClient.
+- Container tests: optional, not included.
+- Seed tests: no unit test for shell scripts.
 
 ## Testing Decisions
 
-### Ce qui fait un bon test
-- Tester le comportement externe, pas l'implementation.
-- Ne pas faire d'appels reseau en tests unitaires.
-- Utiliser les seams existantes.
-- Un test par scenario.
+### What makes a good test
+- Test external behaviour, not the implementation.
+- Do not make network calls in unit tests.
+- Use existing seams.
+- One test per scenario.
 
-### Modules testees
+### Modules tested
 
-| Module | Prior art | Nouveaux tests |
+| Module | Existing tests | New tests |
 |---|---|---|
 | `src/api/main.py` | `test_api.py` | `GET /` = 200 + HTML |
-| `scripts/startup.sh` | aucun | pas de test |
+| `scripts/startup.sh` | none | no test |
 
-### Nouveaux tests
+### New tests
 
-1. `test_chat_serves_html_at_root` — `GET /` = 200 avec `text/html`, contient "IWF".
-2. `test_chat_html_includes_form` — le HTML a un `<input>` pour la question et un bouton.
+1. `test_chat_serves_html_at_root` — `GET /` = 200 with `text/html`, contains "IWF".
+2. `test_chat_html_includes_form` — the HTML has an `<input>` for the question and a button.
 
 ## Out of Scope
 
-- **Kubernetes, Helm, CI/CD** : reevalue apres client.
-- **PySpark mirror** : optionnel.
-- **MinIO / ingestion bronze** : optionnel.
-- **Front-end React ou Streamlit** : page HTML statique suffit.
-- **Tests d'integration Docker** : besoin d'Ollama reel.
-- **Authentification** : pas de login en alpha.
+- **Kubernetes, Helm, CI/CD** : re-evaluate after client.
+- **PySpark mirror** : optional.
+- **MinIO / bronze ingestion** : optional.
+- **Front-end React or Streamlit** : static HTML page is enough.
+- **Docker integration tests** : need real Ollama.
+- **Authentication** : no login in alpha.
 
 ## Further Notes
 
-- Execution sequentielle : Dockerisation, Seed, UI, GLOSSARY+ADR, README+tag.
-- Le fichier `Dockerfile` est renomme `Dockerfile.airflow`.
-- Les embeddings sont stockes dans la table `chunks` avec index HNSW recree a chaque session.
+- Sequential execution: Dockerisation, Seed, UI, GLOSSARY+ADR, README+tag.
+- The `Dockerfile` file is renamed `Dockerfile.airflow`.
+- Embeddings are stored in the `chunks` table with HNSW index recreated each session.

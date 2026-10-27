@@ -1,9 +1,8 @@
-"""Tests unitaires pour les classes DataExtractor et DataLoader (hors réseau).
+"""Unit tests for DataExtractor and DataLoader classes (no network).
 
-Ces tests n'ont pas besoin de connexion réseau — ils utilisent des
-fichiers DuckDB temporaires créés via tmp_path. Ils couvrent les
-branches non testées par test_etl_ow.py (qui nécessite un accès
-réseau pour les extractions réelles).
+These tests do not need network connection — they use temporary
+DuckDB files created via tmp_path. They cover branches not tested
+by test_etl_ow.py (which needs network access for real extractions).
 """
 
 from __future__ import annotations
@@ -13,7 +12,7 @@ import pytest
 
 
 def test_data_extractor_is_abstract() -> None:
-    """Vérifie que DataExtractor est une classe abstraite et ne peut pas être instanciée."""
+    """Checks that DataExtractor is an abstract class and cannot be instantiated.""""
     from src.pipelines.extract_results import DataExtractor
 
     with pytest.raises(TypeError):
@@ -21,8 +20,8 @@ def test_data_extractor_is_abstract() -> None:
 
 
 def test_data_loader_with_event_id(tmp_path) -> None:
-    """Vérifie que DataLoader.load_to_duckdb avec event_id crée la table raw_
-    avec la colonne event_id, et que l'opération est idempotente.
+    """Checks that DataLoader.load_to_duckdb with event_id creates the raw_ table
+    with the event_id column, and the operation is idempotent.
     """
     from pandas import DataFrame
 
@@ -43,14 +42,14 @@ def test_data_loader_with_event_id(tmp_path) -> None:
         assert rows[0] == (10, "x", 42)
         assert rows[1] == (20, "y", 42)
 
-        # Idempotence : réinsérer le même event_id remplace
+        # Idempotence: re-insert the same event_id replaces
         loader.load_to_duckdb(df, "event_test", event_id=42)
         row = conn.execute("SELECT count(*) FROM raw_event_test").fetchone()
         assert row is not None
         count = row[0]
         assert count == 2
 
-        # event_id différent s'ajoute
+        # Different event_id appends
         df2 = DataFrame({"col_a": [30], "col_b": ["z"]})
         loader.load_to_duckdb(df2, "event_test", event_id=99)
         row = conn.execute("SELECT count(*) FROM raw_event_test").fetchone()
@@ -62,7 +61,7 @@ def test_data_loader_with_event_id(tmp_path) -> None:
 
 
 def test_data_loader_without_event_id(tmp_path) -> None:
-    """Vérifie que DataLoader.load_to_duckdb sans event_id utilise CREATE OR REPLACE TABLE."""
+    """Checks that DataLoader.load_to_duckdb without event_id uses CREATE OR REPLACE TABLE.""""
     from pandas import DataFrame
 
     from src.pipelines.extract_results import DataLoader
@@ -78,7 +77,7 @@ def test_data_loader_without_event_id(tmp_path) -> None:
         rows = conn.execute("SELECT val FROM raw_no_event_test ORDER BY val").fetchall()
         assert rows == [(1,), (2,), (3,)]
 
-        # Réinsérer remplace (CREATE OR REPLACE)
+        # Re-insert replaces (CREATE OR REPLACE)
         df2 = DataFrame({"val": [99]})
         loader.load_to_duckdb(df2, "no_event_test")
         rows = conn.execute("SELECT val FROM raw_no_event_test").fetchall()

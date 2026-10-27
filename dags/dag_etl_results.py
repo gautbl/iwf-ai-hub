@@ -6,14 +6,14 @@ import structlog
 import sys
 import os
 
-# Ajouter le répertoire src au PYTHONPATH
+# Add the src directory to PYTHONPATH
 sys.path.insert(0, '/opt/airflow')
 
 from src.pipelines.extract_results import OpenWeightliftingExtractor, DataLoader
 
 logger = structlog.get_logger()
 
-# Liste configurable des events IWF à ingérer
+# Configurable list of IWF events to ingest
 BASE_URL = (
     "https://raw.githubusercontent.com/euanwm/openweightlifting/"
     "development/event_data/IWF"
@@ -25,10 +25,10 @@ def on_failure_callback(context):
     logger.error("task_failed", dag="iwf_performance_pipeline", task_id=task_id)
 
 def run_extraction():
-    # Chemin absolu dans le conteneur Docker
+    # Absolute path in the Docker container
     DB_PATH = "/data/duckdb/iwf_hub.duckdb"
 
-    # Créer le répertoire si nécessaire
+    # Create the directory if needed
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
     loader = DataLoader(DB_PATH)
@@ -72,7 +72,7 @@ with DAG(
     dbt_transform_task = BashOperator(
         task_id='dbt_transform',
         bash_command='dbt run',
-        cwd='/opt/airflow/dbt',  # Répertoire de travail explicite
+        cwd='/opt/airflow/dbt',  # Explicit working directory
         env={'DBT_PROFILES_DIR': '/opt/airflow/dbt'}
     )
     
