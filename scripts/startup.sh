@@ -65,8 +65,6 @@ import duckdb
 conn = duckdb.connect('${DUCKDB_PATH}')
 conn.execute('INSTALL vss')
 conn.execute('LOAD vss')
-conn.execute('SET hnsw_enable_experimental_persistence = true')
-
 # Vérifier si la table chunks existe et contient des données
 tables = conn.execute(
     "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='chunks'"
@@ -79,7 +77,7 @@ else:
     if count == 0:
         print("  ⚠ Table chunks vide — exécutez seed_demo.sh d'abord")
     else:
-        # Recréer l'index HNSW (non persistant entre sessions DuckDB)
+        # Recréer l'index HNSW (l'index ne persiste pas entre sessions DuckDB)
         conn.execute('DROP INDEX IF EXISTS idx_chunks')
         conn.execute("""
             CREATE INDEX idx_chunks ON chunks

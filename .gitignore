@@ -21,6 +21,8 @@ ENV/
 # DuckDB
 data/duckdb/*.duckdb
 data/duckdb/*.duckdb.wal
+# Base de test (regénérée par les tests RAG intégration)
+data/duckdb/test_iwf_hub.duckdb
 
 # Données brutes (on ne versionne pas les gros PDFs ou CSV)
 data/pdfs/*.pdf
