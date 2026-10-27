@@ -13,10 +13,8 @@ COPY src/ src/
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -e .
 
-ENV PYTHONUNBUFFERED=1 \
-    IWF_HOST=0.0.0.0 \
-    IWF_PORT=8000
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.api.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

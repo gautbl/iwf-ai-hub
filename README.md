@@ -197,6 +197,11 @@ L'API expose deux endpoints :
 - `GET /health` : etat de sante (DuckDB, Ollama)
 - `POST /chat` : conversation avec l'agent IWF
 
+> **Airflow build warning** : The Airflow container has a known NumPy version conflict
+> (`numpy<2` required by some upstream dependencies) and pip dependency backtracking.
+> The container still builds and runs successfully. If needed, track this at
+> `.scratch/ship-plan/issues/06-harden-airflow-build.md`.
+
 ---
 
 ## Roadmap
