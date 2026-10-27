@@ -219,5 +219,13 @@ Phase | Component | Status | Description |
 
 ---
 
+## TO-DO
+
+ 1. Pull models if needed: ollama pull nomic-embed-text and ollama pull llama3.2
+ 2. Run scripts/startup.sh — rebuilds the VSS index
+ 3. Launch the API: cd iwf-ai-hub && source .venv/bin/activate && uvicorn src.api.main:app --reload --port 8000
+ 4. Then curl localhost:8000/chat with a question
+---
+
 ## License
 MIT - Open source personal project
