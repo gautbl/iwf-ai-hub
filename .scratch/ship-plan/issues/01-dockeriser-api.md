@@ -11,7 +11,7 @@
 - [x] Create `Dockerfile.api` (base python:3.11-slim, pip install -e ., expose 8000)
 - [x] Rename existing `Dockerfile` to `Dockerfile.airflow`
 - [x] Add the `api` service in `docker-compose.yaml` with volume `data/duckdb:/data/duckdb`, dependency `ollama`, env vars `IWF_DUCKDB_PATH` and `IWF_OLLAMA_URL`
-- [ ] Verify: `docker-compose up` + `curl localhost:8000/health` = 200 (needs Docker Engine)
+- [x] Verify: `docker-compose up` + `curl localhost:8000/health` = 200
 
 ## Source changes made
 
@@ -23,3 +23,5 @@
 - 81 pytest tests green
 - mypy + ruff pass
 - 2 commits on `main` : `f384ccc` + `17b1160`
+- Review fixes committed at `8ad0a58` : fix volume path, entry point, dead env vars, French comments
+- `docker compose up api` → `curl localhost:8000/health` = 200 (DuckDB + Ollama ok)
