@@ -39,6 +39,8 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-5 : 
 - **Lint** : `ruff check src/ tests/`
 - **Format** : `black src/ tests/`
 - **Types** : `mypy src/`
+- **Seed** : `scripts/seed_demo.sh` telecharge PDF TCRR + CSV, initialise DB, charge chunks et embeddings
+- **Startup verify** : `scripts/startup.sh` verifie la base, pull les modeles Ollama et rebuild l'index HNSW VSS
 - **Docker** : `docker-compose up -d` demarre Airflow (8080), API (8000), Ollama (11434)
 - **Health check API** : `curl localhost:8000/health`
 - **ETL** : DAG Airflow `iwf_performance_pipeline` dans `http://localhost:8080`
