@@ -46,7 +46,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./data:/data
+      - ./data/duckdb:/data/duckdb
     environment:
       - IWF_DUCKDB_PATH=data/duckdb/iwf_hub.duckdb
       - IWF_OLLAMA_URL=http://ollama:11434
