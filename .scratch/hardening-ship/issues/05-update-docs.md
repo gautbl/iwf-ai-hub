@@ -3,7 +3,7 @@
 After code hardening, update the project documentation to reflect reality:
 
 - **README.md**: 
-  - Mark Phases 4 and 5 as ✅ Terminé (not ⏳ À venir)
+  - Mark Phases 4 and 5 as ✅ Done (not ⏳ Coming)
   - Update the file tree — `src/agent/` and `src/api/` exist, fix their "(not yet created)" annotations
   - Add a section on running the API locally (`uvicorn src.api.main:app`)
   - Add a `.env.example` file documenting `IWF_*` env vars (matching `src/api/config.py`)

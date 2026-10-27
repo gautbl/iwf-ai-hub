@@ -34,11 +34,11 @@ LIMIT 5;
 ```sql
 CREATE TABLE chunks (
   id          UUID DEFAULT gen_random_uuid(),
-  source      VARCHAR NOT NULL,    -- nom du PDF
-  article     VARCHAR,             -- numéro d'article IWF
+  source      VARCHAR NOT NULL,    -- PDF file name
+  article     VARCHAR,             -- IWF article number
   page        INTEGER,
   chunk_text  TEXT NOT NULL,
-  embedding   FLOAT[768],          -- adapter à la dimension du modèle Ollama
+  embedding   FLOAT[768],          -- adjust to the Ollama model dimension
   created_at  TIMESTAMP DEFAULT now()
 );
 ```

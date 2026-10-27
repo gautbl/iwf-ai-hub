@@ -1,21 +1,21 @@
 # IWF AI Hub
 
-Plateforme d'IA pour l'International Weightlifting Federation (IWF).
-Architecture Data + IA avec Docker Compose pour la scalabilité
-et la souveraineté des données.
+AI platform for the International Weightlifting Federation (IWF).
+Data + AI architecture with Docker Compose for scalability
+and data sovereignty.
 
 ---
 
-## Problème métier
+## Business problem
 
-L'IWF gère un volume croissant de données (résultats de compétitions, réglementations anti-dopage,
-historiques athlètes) dans des PDFs et bases de données hétérogènes.
+The IWF manages a growing volume of data (competition results, anti-doping regulations,
+athlete history) across PDFs and heterogeneous databases.
 
-**Objectifs :**
-- Centraliser et structurer les données IWF (ETL moderne)
-- Permettre l'interrogation en langage naturel des réglementations (RAG)
-- Fournir un agent IA conversationnel pour les analystes et entraîneurs
-- Garantir la souveraineté des données (infrastructure on-premise / cloud souverain)
+**Goals :**
+- Centralize and structure IWF data (modern ETL)
+- Enable natural language query of regulations (RAG)
+- Provide a conversational AI agent for analysts and coaches
+- Guarantee data sovereignty (on-premise / sovereign cloud infrastructure)
 
 ---
 
@@ -158,10 +158,10 @@ iwf-ai-hub/
 
 ---
 
-> **Note DuckDB VSS** : La creation d'un index HNSW exige
-> `SET hnsw_enable_experimental_persistence = true;` apres `LOAD vss;`
-> (dans `src/db/init.sql`).
-> L'index HNSW ne persiste pas entre les sessions DuckDB.
+> **DuckDB VSS note** : To build an HNSW index use
+> `SET hnsw_enable_experimental_persistence = true;` after `LOAD vss;`
+> (in `src/db/init.sql`).
+> The HNSW index does not persist across DuckDB sessions.
 
 > **Sources PDF IWF** : URL dans `dags/dag_ingest_rules.py` :
 > `https://www.iwf.net/wp-content/uploads/downloads/2024/01/IWF_TCRR_2024.pdf`
@@ -201,18 +201,18 @@ L'API expose deux endpoints :
 
 ## Roadmap
 
-Phase | Composant | Statut | Description |
+Phase | Component | Status | Description |
 |---|---|---|---|
-| Phase 1 | Infrastructure Docker | Fait | Airflow, DuckDB, Ollama |
-| Phase 2 | Pipeline ETL | Fait | dbt, Star Schema, tests |
-| Phase 3 | Pipeline RAG | Fait | PDFs, chunking, embeddings, retrieval |
-| Phase 4 | Agent LangGraph | Fait | Outils, memoire, workflow |
-| Phase 5 | API FastAPI | Fait | REST, auth, monitoring |
-| Phase 6 | Kubernetes | A venir | Migration, Helm, CI/CD |
-| Phase 2.5 | Miroir PySpark Silver | Optionnel | Transformation + validation parite |
-| Phase 7 | Couche d'ingestion | Optionnel | MinIO + boto3 |
+| Phase 1 | Docker Infrastructure | Done | Airflow, DuckDB, Ollama |
+| Phase 2 | ETL Pipeline | Done | dbt, Star Schema, tests |
+| Phase 3 | RAG Pipeline | Done | PDFs, chunking, embeddings, retrieval |
+| Phase 4 | LangGraph Agent | Done | Tools, memory, workflow |
+| Phase 5 | FastAPI API | Done | REST, auth, monitoring |
+| Phase 6 | Kubernetes | Coming | Migration, Helm, CI/CD |
+| Phase 2.5 | PySpark Silver Mirror | Optional | Transformation + parity validation |
+| Phase 7 | Ingestion Layer | Optional | MinIO + boto3 |
 
 ---
 
-## Licence
-MIT - Projet personnel open source
+## License
+MIT - Open source personal project

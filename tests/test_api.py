@@ -1,8 +1,8 @@
-"""Tests de l'API FastAPI IWF (Phase 5).
+"""IWF FastAPI API tests (Phase 5).
 
-Conventions pytest-conventions : docstrings en français, variables en
-anglais, aucun appel réseau ni Ollama réel. L'application est
-construite via la factory ``create_app`` ; l'agent LangGraph est
+Conventions pytest-conventions: docstrings in English, variable names in
+English, no real network calls or real Ollama. The application is
+built via the ``create_app`` factory; the LangGraph agent is
 remplacé par un double via ``app.dependency_overrides`` et les
 checks réseau (DuckDB / Ollama) sont neutralisés par ``monkeypatch``.
 """

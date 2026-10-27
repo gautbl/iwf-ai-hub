@@ -1,90 +1,90 @@
-# Plan de ship — IWF AI Hub v1.0.0-alpha.1
+# Ship plan — IWF AI Hub v1.0.0-alpha.1
 
-## Décisions
+## Decisions
 
-| # | Question | Décision |
+| # | Question | Decision |
 |---|---|---|
-| 1 | Périmètre K8s | Allégé — **skippé pour le ship**. Réévaluation après client. |
-| 2 | Priorité | **Polish client d'abord**, K8s plus tard. |
-| 3 | Interface client | **Mini UI HTML** servie par FastAPI. |
-| 4 | GLOSSARY + ADR | **Après le plan**, reflet des décisions. |
-| 5 | Étendue mini UI | Page HTML statique (option A). |
-| 6 | Données démo | **Données IWF réelles publiques** (PDFs + résultats). |
-| 7 | Points douloureux | Les 3 résolus : VSS persist, seed embeddings, base de test. |
-| 8 | Docker API | **Dockerisé maintenant** — un seul `docker-compose up`. |
-| 9 | Ordre | **Séquentiel** — pas de parallélisation. |
+| 1 | K8s scope | Reduced — **skipped for ship**. Re-evaluate after client. |
+| 2 | Priority | **Client polish first**, K8s later. |
+| 3 | Client interface | **Mini UI HTML** served by FastAPI. |
+| 4 | GLOSSARY + ADR | **After the plan**, reflect decisions. |
+| 5 | Mini UI scope | Static HTML page (option A). |
+| 6 | Demo data | **Real public IWF data** (PDFs + results). |
+| 7 | Pain points | All 3 resolved: VSS persist, seed embeddings, test DB. |
+| 8 | Docker API | **Dockerised now** — single `docker-compose up`. |
+| 9 | Order | **Sequential** — no parallelisation. |
 | 10 | Version | **v1.0.0-alpha.1** |
-| 11 | Client final | **Entraîneur + analyste** — les deux usages. |
+| 11 | End client | **Coach + analyst** — both use cases. |
 
-## Tâches (ordre séquentiel)
+## Tasks (sequential order)
 
-### 1. Dockeriser l'API FastAPI
+### 1. Dockerise the FastAPI API
 
-**Objectif** : L'API tourne dans `docker-compose up` avec Airflow, Ollama, DuckDB.
+**Goal** : The API runs in `docker-compose up` with Airflow, Ollama, DuckDB.
 
-**Sous-tâches** :
-- Nouveau Dockerfile pour l'API (`Dockerfile.api`) — basé python:3.11-slim.
-- Ajout du service `api` dans `docker-compose.yaml`.
-- Service `api` dépend de `ollama` et du volume DuckDB.
-- Volume partagé `data/duckdb` monté dans le service API.
-- Test : `docker-compose up` + `curl localhost:8000/health` = ok.
+**Sub-tasks** :
+- New Dockerfile for the API (`Dockerfile.api`) — based on python:3.11-slim.
+- Add the `api` service to `docker-compose.yaml`.
+- `api` service depends on `ollama` and the DuckDB volume.
+- Shared volume `data/duckdb` mounted in the API service.
+- Test: `docker-compose up` + `curl localhost:8000/health` = ok.
 
-**Fichiers à créer/modifier** :
-- `Dockerfile.api` (nouveau)
-- `docker-compose.yaml` (ajout service api)
+**Files to create or change** :
+- `Dockerfile.api` (new)
+- `docker-compose.yaml` (add api service)
 
-### 2. Script de seed et startup
+### 2. Seed and startup script
 
-**Objectif** : Un script `scripts/startup.sh` qui vérifie et initialise l'environnement.
+**Goal** : A script `scripts/startup.sh` that checks and initialises the environment.
 
-**Sous-tâches** :
-- `scripts/seed_demo.sh` — télécharge PDF IWF + CSV résultats publics.
-- `scripts/startup.sh` — vérifie base, rebuild index VSS, pull modèles Ollama manquants.
-- Lancement des embeddings pour les chunks PDF.
-- Fix : VSS index rebuild au démarrage (via script ou init de l'app).
-- Fix : seed de base de test retiré de git, fixture pytest recrée la base.
+**Sub-tasks** :
+- `scripts/seed_demo.sh` — downloads IWF PDF + public results CSV.
+- `scripts/startup.sh` — checks DB, rebuilds VSS index, pulls missing Ollama models.
+- Generate embeddings for PDF chunks.
+- Fix: VSS index rebuild on startup (via script or app init).
+- Fix: test DB seed removed from git, pytest fixture recreates the DB.
 
-**Fichiers à créer/modifier** :
-- `scripts/seed_demo.sh` (nouveau)
-- `scripts/startup.sh` (nouveau)
-- `src/db/init.sql` (éventuelle mise à jour)
-- `.gitignore` (ajout `test_iwf_hub.duckdb`)
+**Files to create or change** :
+- `scripts/seed_demo.sh` (new)
+- `scripts/startup.sh` (new)
+- `src/db/init.sql` (possible update)
+- `.gitignore` (add `test_iwf_hub.duckdb`)
 
-### 3. Mini UI Chat (page HTML)
+### 3. Mini UI Chat (HTML page)
 
-**Objectif** : Une page HTML statique servie par FastAPI à l'URL racine `/`.
+**Goal** : A static HTML page served by FastAPI at the root URL `/`.
 
-**Sous-tâches** :
-- Page unique : champ texte, bouton envoyer, zone de réponse.
-- Appel `POST /chat` via fetch JS.
-- Design sobre, responsive, utilisable sur mobile.
-- Montre le session_id pour suivre la conversation.
+**Sub-tasks** :
+- Single page: text field, send button, response area.
+- Call `POST /chat` via JS fetch.
+- Clean, responsive design, usable on mobile.
+- Show the session_id to follow the conversation.
 
-**Fichiers à créer** :
-- `src/api/static/index.html` (ou intégré dans FastAPI)
+**Files to create** :
+- `src/api/static/index.html` (or integrated in FastAPI)
 
-### 4. Documentation domaine
+### 4. Domain documentation
 
-**Objectif** : GLOSSARY.md + ADR clés pour le projet.
+**Goal** : GLOSSARY.md + key ADRs for the project.
 
-**Sous-tâches** :
-- `GLOSSARY.md` — termes du domaine IWF (athlète, compétition, réglementation, résultat, session, etc.).
-- `docs/adr/0001-architecture-souveraine.md` — pourquoi tout est local, pas de cloud.
-- `docs/adr/0002-duckdb-vss-pour-rag.md` — pourquoi DuckDB VSS plutôt qu'une base vectorielle dédiée.
+**Sub-tasks** :
+- `GLOSSARY.md` — IWF domain terms (athlete, competition, regulation, result, session, etc.).
+- `docs/adr/0001-sovereign-architecture.md` — why everything is local, no cloud.
+- `docs/adr/0002-duckdb-vss-for-rag.md` — why DuckDB VSS instead of a dedicated vector database.
 
-### 5. Polish README et tag
+### 5. Polish README and tag
 
-**Objectif** : README à jour pour un nouveau développeur ou client.
+**Goal** : README updated for a new developer or client.
 
-**Sous-tâches** :
-- README mis à jour avec instructions one-click `docker-compose up`.
-- Section "Démo client" avec URL et usage.
+**Sub-tasks** :
+- README updated with one-click `docker-compose up` instructions.
+- Section "Client demo" with URL and usage.
 - Tag `v1.0.0-alpha.1`.
-- CHANGELOG.md ou release notes.
+- CHANGELOG.md or release notes.
 
-## Tests de validation
+## Validation tests
 
-- `pytest tests/` — 81 tests verts.
+- `pytest tests/` — 81 tests green.
 - `docker-compose up` + `curl localhost:8000/health` = ok.
-- `curl localhost:8000/` = page HTML chat.
-- `curl -X POST localhost:8000/chat -H "Content-Type: application/json" -d '{"query":"Quelles sont les règles antidopage?"}'` = réponse.
+- `curl localhost:8000/` = HTML chat page.
+- `curl -X POST localhost:8000/chat -H "Content-Type: application/json" -d '{"query":"Quelles sont les règles antidopage?"}'` = response.

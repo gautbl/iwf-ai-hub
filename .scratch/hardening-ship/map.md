@@ -10,15 +10,15 @@ No K8s, no Helm, no CI/CD, no PySpark, no MinIO — those are deferred or option
 
 - **Domain**: Python 3.11, DuckDB, LangGraph, FastAPI, Ollama
 - **Skills**: consulting `AGENTS.md` and existing conventions (structlog, pydantic-settings, pytest)
-- **Language**: project comments/docs in French, code in English
+- **Language**: project comments/docs in English, code in English
 - **Tests**: mocked Ollama throughout. Real end-to-end validation requires Docker + Ollama running — left as fog, not ticketed here.
 - **Work**: This effort is about **hardening** (code quality, test coverage, dep alignment) then **documentation** (README, AGENTS.md, env setup). The dependency order is hardening → docs: don't document misleading deps before fixing them.
 
 ## Decisions so far
 
-- **01-align-deps**: `pyproject.toml` est la source de vérité unique avec bornes inférieures souples. `requirements/base.txt` devient un lockfile-snapshot commenté. `numpy<2` supprimé, `pandas<2.2` remplacé, `duckdb==0.10.2` remplacé, `langchain` éclaté en `langchain-core` + `langchain-ollama`. Dependencies manquantes ajoutées (pydantic-settings, langchain-core, langchain-ollama, langgraph-checkpoint-duckdb). 58 tests verts.
+- **01-align-deps**: `pyproject.toml` is the single source of truth with soft lower bounds. `requirements/base.txt` becomes a commented lockfile-snapshot. `numpy<2` removed, `pandas<2.2` replaced, `duckdb==0.10.2` replaced, `langchain` split into `langchain-core` + `langchain-ollama`. Missing dependencies added (pydantic-settings, langchain-core, langchain-ollama, langgraph-checkpoint-duckdb). 58 tests green.
 
-- **04-warnings-and-tooling**: dev tooling installé et baseline clean (ruff, black, mypy OK). Warnings amont filtrées via `filterwarnings` dans `pyproject.toml` avec `['error', 'ignore::PendingDeprecationWarning:langgraph', 'ignore::DeprecationWarning:starlette.testclient']` : les warnings inattendus sont en erreur. Patch de `LC_REVIVER` dans `src/agent/graph.py` avec `allowed_objects='core'`. 81 tests verts. Note : `pytest -W error` CLI ne fonctionne pas (ordre LIFO pytest) — utiliser `pytest tests/` qui est équivalent.
+- **04-warnings-and-tooling**: dev tooling installed and baseline clean (ruff, black, mypy OK). Upstream warnings filtered via `filterwarnings` in `pyproject.toml` with `['error', 'ignore::PendingDeprecationWarning:langgraph', 'ignore::DeprecationWarning:starlette.testclient']` : unexpected warnings become errors. Patch `LC_REVIVER` in `src/agent/graph.py` with `allowed_objects='core'`. 81 tests green. Note: `pytest -W error` CLI does not work (pytest LIFO order) — use `pytest tests/` which is equivalent.
 
 ## Not yet specified
 

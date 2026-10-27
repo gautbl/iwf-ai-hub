@@ -1,7 +1,7 @@
-"""Tests de l'agent LangGraph IWF (Phase 4).
+"""IWF LangGraph agent tests (Phase 4).
 
-Conventions pytest-conventions : docstrings en français, variables en
-anglais, aucun appel réseau ni Ollama réel — tout est vérifié localement.
+Conventions pytest-conventions: docstrings in English, variable names in
+English, no real network calls or real Ollama — everything is checked locally.
 """
 
 from typing import Annotated, get_args, get_origin, is_typeddict

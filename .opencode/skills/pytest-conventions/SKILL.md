@@ -29,4 +29,4 @@ description: Testing conventions for iwf-ai-hub - use before writing or reviewin
 - Integration tests may target a real service only when explicitly intended
 
 ## Language
-Docstrings and comments in French, variable names in English.
+Docstrings and comments in English, variable names in English.

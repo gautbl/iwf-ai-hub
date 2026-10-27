@@ -50,4 +50,4 @@ Follow pytest-conventions and langgraph-patterns skills:
 - Never hit a live Ollama instance in unit tests
 
 ## Language
-Docstrings and comments in French, variable names in English.
+Docstrings and comments in English, variable names in English.

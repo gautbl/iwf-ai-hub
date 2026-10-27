@@ -37,4 +37,4 @@ You implement phase 3 of iwf-ai-hub.
 Follow the pytest-conventions skill (reportlab PDFs, cleanup, mock Ollama).
 
 ## Language
-Documentation and docstrings in French, variable names in English.
+Documentation and docstrings in English, variable names in English.

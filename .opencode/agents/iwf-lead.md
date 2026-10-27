@@ -42,5 +42,5 @@ You orchestrate the development of iwf-ai-hub.
 - dbt runs inside the Airflow container, never in a host venv
 - No reference .venv-dbt on the host
 - All tests follow the pytest-conventions skill
-- Docs and comments in French, variable names in English
+- Docs and comments in English, variable names in English
 - Never propose managed cloud services (sovereignty constraint)
