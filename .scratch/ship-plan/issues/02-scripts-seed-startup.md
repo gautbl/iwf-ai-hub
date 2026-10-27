@@ -1,12 +1,12 @@
-# 02: Scripts de seed et startup
+# 02: Seed et startup
 
-**What to build:** Les donnees IWF publiques (PDF reglementation + CSV resultats) sont chargees automatiquement. Les embeddings sont generes. L'index VSS est reconstruit au demarrage. Les modeles Ollama sont disponibles.
+**What to build:** Les donnees IWF publiques (PDF TCRR + CSV openweightlifting) sont chargees automatiquement. Les embeddings et l'index VSS sont generes au demarrage. Les modeles Ollama sont disponibles.
 
 **Blocked by:** 01 (Dockeriser l'API)
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] Creer `scripts/seed_demo.sh` (telecharge PDF, CSV, lance chunking + embeddings)
-- [ ] Creer `scripts/startup.sh` (verifie base, pull modeles Ollama si absents, rebuild index HNSW VSS)
-- [ ] Ajouter `test_iwf_hub.duckdb` dans `.gitignore`
-- [ ] Verifier : apres `docker-compose up`, le chat repond sur les reglementations IWF
+- [x] `scripts/seed_demo.sh` : un `curl` sur chaque URL retourne 200 ET la base contient `raw_ow_events` et `chunks` non vides apres execution
+- [x] `scripts/startup.sh` : base absente → exit 1. Base presente et index absent → requete VSS reussie apres rebuild
+- [x] `data/duckdb/test_iwf_hub.duckdb` ajoute dans `.gitignore`
+- [x] Verification manuelle : `docker-compose up` + seed → `curl localhost:8000/chat` renvoie une reponse contextuelle
