@@ -16,7 +16,7 @@ You maintain the dbt models of iwf-ai-hub.
 
 ## Context
 - dbt project name: iwf_project (profiles.yml and dbt_project.yml)
-- dbt runs INSIDE the Airflow container (dbt-duckdb via Dockerfile), never on the host
+- dbt runs INSIDE the Airflow container (dbt-duckdb via `Dockerfile.airflow`), never on the host
 - No reference .venv-dbt on the host
 - Staging: materialized as VIEWS (dbt/models/staging/)
 - Marts:   materialized as TABLES (dbt/models/marts/)

@@ -4,14 +4,14 @@
 Data + AI platform for the International Weightlifting Federation. Phases 1-5 : Docker infra, ETL dbt, pipeline RAG, agent LangGraph, API FastAPI. Phase 6 K8s reportée. 81 tests pytest verts.
 
 ## Python Environnements (CRITICAL)
-- `.venv` → ETL scripts, RAG, API, agent LangGraph
-- dbt runs **inside** the Airflow container (dbt-duckdb installed via Dockerfile), **never** in a host venv
+- `.venv` → ETL scripts, RAG, agent LangGraph (l API tourne aussi via Docker)
+- dbt runs **inside** the Airflow container (dbt-duckdb installed via `Dockerfile.airflow`), **never** in a host venv
 - PySpark (optional) runs in Docker or a dedicated `.venv-spark`. **Never** in `.venv`
 
 ## Conventions
 - Python 3.11.9+, strict types
 - Logs via structlog, never `print()`
-- Config via pydantic-settings + ConfigMap K8s
+- Config via pydantic-settings + ConfigMap K8s. Note: `src/agent/tools.py` et `src/agent/graph.py` lisent aussi `IWF_DUCKDB_PATH` et `IWF_OLLAMA_URL` via `os.environ.get`.
 - One test per functional unit, pytest
 - Formatting & linting via black + ruff (config dans `pyproject.toml`)
 - Type checking via mypy sur le code source (`src/`)
@@ -27,6 +27,9 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-5 : 
 - **Agent**: LangGraph — retrieve → LLM → tools
 - **API**: FastAPI — `/health`, `/chat`
 - **Infra**: Docker Compose (dev) — Kubernetes (prod) reporté
+  - Airflow : `Dockerfile.airflow`, port 8080
+  - API : `Dockerfile.api`, port 8000
+  - Ollama : image officielle, port 11434
 - **Ingestion (optional)**: Airflow → MinIO (S3) + boto3 → Bronze
 - **PySpark mirror (optional)**: Silver transformation + parity vs dbt
 
@@ -36,7 +39,9 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-5 : 
 - **Lint** : `ruff check src/ tests/`
 - **Format** : `black src/ tests/`
 - **Types** : `mypy src/`
-- **ETL** : `docker-compose up -d` → Airflow UI http://localhost:8080, DAG `iwf_performance_pipeline`
+- **Docker** : `docker-compose up -d` demarre Airflow (8080), API (8000), Ollama (11434)
+- **Health check API** : `curl localhost:8000/health`
+- **ETL** : DAG Airflow `iwf_performance_pipeline` dans `http://localhost:8080`
 - **dbt** (inside container) : `cd /opt/airflow/dbt && dbt run && dbt test`
 
 ## Critical Paths
@@ -59,8 +64,8 @@ de pytest fait que le flag CLI est vérifié avant les ignores du config.
 > une protection équivalente.
 
 ## Environment Setup
-- `.venv` exists on host ; deps from `requirements/base.txt`
-- dbt runs in Airflow container ; deps from `requirements/airflow.txt`
+- `.venv` exists on host. Deps from `requirements/base.txt`
+- dbt runs in Airflow container (`Dockerfile.airflow`). Deps from `requirements/airflow.txt`
 - Ollama runs separately (port 11434) for LLM + embeddings (`nomic-embed-text`)
 - DuckDB data persists via Docker volume mount
 - PySpark (optional) : `requirements/spark.txt` → `.venv-spark`, JDK 11/17 required, exchange via Parquet
