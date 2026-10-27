@@ -28,12 +28,12 @@ echo ""
 mkdir -p "$PDF_DIR"
 
 # ── 2. Télécharger le PDF TCRR ────────────────────────────────────────
-echo "[1/5] Téléchargement du PDF IWF TCRR..."
+echo "[1/6] Téléchargement du PDF IWF TCRR..."
 curl -fSL -o "${PDF_DIR}/iwf_tcrr_2026.pdf" "$IWF_PDF_URL"
 echo "  ✓ PDF sauvegardé dans ${PDF_DIR}/iwf_tcrr_2026.pdf"
 
 # ── 3. Télécharger les CSV de résultats ───────────────────────────────
-echo "[2/5] Téléchargement des CSV de résultats..."
+echo "[2/6] Téléchargement des CSV de résultats..."
 for event_id in "${EVENT_IDS[@]}"; do
     echo "  → Event ${event_id}..."
     curl -fSL -o "${PDF_DIR}/${event_id}.csv" "${OW_BASE_URL}/${event_id}.csv"
@@ -41,7 +41,7 @@ for event_id in "${EVENT_IDS[@]}"; do
 done
 
 # ── 4. Initialiser la base DuckDB ─────────────────────────────────────
-echo "[3/5] Initialisation de la base DuckDB..."
+echo "[3/6] Initialisation de la base DuckDB..."
 python3 -c "
 import duckdb
 conn = duckdb.connect('${DUCKDB_PATH}')
@@ -51,9 +51,8 @@ conn.close()
 print('  ✓ Base initialisée')
 "
 
-# ── 5. Pipeline RAG : load -> chunk -> embed -> store ─────────────────
-# ── 5a. Charger les CSV dans DuckDB (Star Schema raw_ow_events) ─────
-echo "[4a/5] Chargement des CSV dans DuckDB..."
+# ── 5. Charger les CSV dans DuckDB (Star Schema raw_ow_events) ────────
+echo "[4/6] Chargement des CSV dans DuckDB..."
 python3 -c "
 import sys
 sys.path.insert(0, '.')
@@ -68,8 +67,8 @@ for event_id in [117, 119, 120]:
 print('  ✓ CSV chargés dans raw_ow_events')
 "
 
-# ── 5b. Pipeline RAG : load -> chunk -> embed -> store ────────────────
-echo "[5/5] Pipeline RAG : chunks et embeddings..."
+# ── 6. Pipeline RAG : load -> chunk -> embed -> store ─────────────────
+echo "[6/6] Pipeline RAG : chunks et embeddings..."
 cd "$PROJECT_DIR"
 
 python3 -c "
