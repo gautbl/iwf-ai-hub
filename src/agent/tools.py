@@ -1,13 +1,13 @@
-"""Outils de l'agent IWF (Phase 4).
+"""Tools for the IWF agent (Phase 4).
 
-Trois outils exposés au graphe LangGraph :
-- search_regulations : recherche vectorielle dans les réglementations (VSS) ;
-- query_results : interrogation du Star Schema (fct_results + dimensions) ;
-- compute_athlete_stats : agrégats de performance par athlète.
+Three tools exposed to the LangGraph graph:
+- search_regulations: vector search in regulations (VSS)
+- query_results: queries the Star Schema (fct_results + dimensions)
+- compute_athlete_stats: performance aggregates per athlete
 
-Tous les accès DuckDB sont en lecture seule et dégradent proprement
-(liste vide / dict vide + log structlog) si la base est indisponible,
-de sorte qu'un échec d'outil ne fait jamais planter le graphe.
+All DuckDB access is read-only and degrades cleanly
+(empty list / empty dict + structlog log) if the DB is unavailable,
+so a tool failure never crashes the graph.
 """
 
 import os
@@ -20,31 +20,30 @@ from src.pipelines import retrieval
 
 logger = structlog.get_logger()
 
-# Base DuckDB du projet (production). Les outils n'y font que des lectures.
+# Project DuckDB path (production). Tools only read from it.
 DB_PATH = os.environ.get("IWF_DUCKDB_PATH", "data/duckdb/iwf_hub.duckdb")
 
 
 def _escape_like(value: str) -> str:
-    """Échappe les caractères génériques LIKE (%, _) et le caractère d'échappement."""
+    """Escapes LIKE wildcard characters (%, _) and the escape char."""
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 def search_regulations(query: str, top_k: int = 5) -> list[dict]:
-    """Recherche les extraits réglementaires les plus proches d'une requête.
+    """Searches for regulation snippets closest to a query.
 
-    Délègue au retrieval VSS de la Phase 3 (embedding de la requête via
-    Ollama local, similarité cosinus sur la table chunks).
+    Delegates to Phase 3 VSS retrieval (embed the query via
+    local Ollama, cosine similarity on the chunks table).
 
     Args:
-        query: question en langage naturel sur les réglementations IWF.
-        top_k: nombre maximum d'extraits retournés.
+        query: natural language question about IWF regulations.
+        top_k: maximum number of snippets to return.
 
     Returns:
-        Liste de dicts {chunk_text, source, article, page, score}, triée
-        par score décroissant. Liste vide si Ollama ou DuckDB est
-        indisponible, ou en cas d'erreur inattendue : l'outil est la
-        frontière d'erreur du graphe, aucune exception ne doit remonter
-        vers le tool_node.
+        List of dicts {chunk_text, source, article, page, score}, sorted
+        by descending score. Empty list if Ollama or DuckDB is
+        unavailable, or on unexpected error: the tool is the graph
+        error boundary, no exception must reach the tool_node.
     """
     try:
         return retrieval.retrieve(query, DB_PATH, top_k)
@@ -61,22 +60,21 @@ def query_results(
     category_name: str | None = None,
     event_date: str | None = None,
 ) -> list[dict]:
-    """Interroge le Star Schema : résultats filtrés par athlète, catégorie ou date.
+    """Queries the Star Schema: results filtered by athlete, category or date.
 
-    Les filtres sont combinés par ET et seuls les paramètres non nuls
-    génèrent une condition. Les comparaisons de noms sont insensibles
-    à la casse (ILIKE) et les caractères génériques LIKE (%, _) sont
-    échappés pour éviter les correspondances accidentelles.
+    Filters combine with AND and only non-null parameters generate
+    a condition. Name comparisons are case-insensitive (ILIKE) and
+    LIKE wildcard chars (%, _) are escaped to prevent accidental matches.
 
     Args:
-        athlete_name: nom de l'athlète, sinon None.
-        category_name: catégorie de poids (ex: "77 kg Men"), sinon None.
-        event_date: date de compétition au format "YYYY-MM-DD", sinon None.
+        athlete_name: athlete name, or None.
+        category_name: weight category (e.g. "77 kg Men"), or None.
+        event_date: competition date as "YYYY-MM-DD", or None.
 
     Returns:
-        Liste de dicts {athlete_name, category_name, event_date,
-        snatch_total, clean_jerk_total, combined_total}. Liste vide si
-        la base est indisponible ou si aucune ligne ne correspond.
+        List of dicts {athlete_name, category_name, event_date,
+        snatch_total, clean_jerk_total, combined_total}. Empty list if
+        the DB is unavailable or no row matches.
     """
     conditions: list[str] = []
     params: list[str] = []
@@ -123,16 +121,16 @@ def query_results(
 
 
 def compute_athlete_stats(athlete_name: str) -> dict:
-    """Calcule les meilleurs résultats d'un athlète à partir de la table de faits.
+    """Calculates the best results for an athlete from the fact table.
 
     Args:
-        athlete_name: nom de l'athlète (comparaison insensible à la casse,
-            caractères génériques LIKE échappés).
+        athlete_name: athlete name (case-insensitive match,
+            LIKE wildcard chars escaped).
 
     Returns:
         Dict {athlete_name, best_snatch, best_clean_jerk, best_total,
-        nb_competitions}. Dict vide si l'athlète est introuvable ou si
-        la base est indisponible.
+        nb_competitions}. Empty dict if athlete not found or
+        the DB is unavailable.
     """
     sql = """
         SELECT a.name AS athlete_name,
@@ -167,7 +165,7 @@ def compute_athlete_stats(athlete_name: str) -> dict:
         conn.close()
 
 
-# Registre de dispatch pour le tool_node du graphe (nom d'outil -> fonction).
+# Dispatch registry for the graph tool_node (tool name -> function).
 TOOLS: dict[str, Callable[..., list[dict] | dict]] = {
     "search_regulations": search_regulations,
     "query_results": query_results,

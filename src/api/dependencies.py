@@ -1,9 +1,9 @@
-"""Injection de dépendances de l'API FastAPI IWF (Phase 5).
+"""Dependency injection for the IWF FastAPI API (Phase 5).
 
-Définit les ``Depends()`` consommés par les endpoints : l'application
-LangGraph singleton et la configuration. En tests, ces dépendances
-sont remplacées via ``app.dependency_overrides[...]`` pour ne jamais
-toucher Ollama ou DuckDB.
+Defines the ``Depends()`` consumed by endpoints: the LangGraph
+application singleton and the configuration. In tests, these
+dependencies are replaced via ``app.dependency_overrides[...]``
+to never touch Ollama or DuckDB.
 """
 
 from __future__ import annotations
@@ -17,18 +17,17 @@ __all__ = ["get_agent_app", "get_settings", "Settings"]
 
 
 def get_agent_app() -> CompiledStateGraph:
-    """Retourne l'application LangGraph compilée (singleton).
+    """Returns the compiled LangGraph application (singleton).
 
-    Construit paresseusement au premier appel par
-    ``src.agent.graph.get_app`` puis mis en cache dans le module
-    agent. En production, le checkpointer DuckDB est configuré pour
-    persister l'historique de session.
+    Builds lazily on first call by ``src.agent.graph.get_app`` then
+    caches in the agent module. In production, the DuckDB checkpointer
+    persists session history.
 
-    En tests, cette dépendance est substituée via
+    In tests, this dependency is replaced via
     ``app.dependency_overrides[get_agent_app] = lambda: fake_app``
-    pour éviter l'instanciation du LLM ou l'ouverture de la base.
+    to avoid LLM instantiation or database opening.
 
     Returns:
-        Application LangGraph compilée, prête pour ``invoke``.
+        Compiled LangGraph application, ready for ``invoke``.
     """
     return get_app()

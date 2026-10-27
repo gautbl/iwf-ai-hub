@@ -3,8 +3,8 @@
 Conventions pytest-conventions: docstrings in English, variable names in
 English, no real network calls or real Ollama. The application is
 built via the ``create_app`` factory; the LangGraph agent is
-remplacé par un double via ``app.dependency_overrides`` et les
-checks réseau (DuckDB / Ollama) sont neutralisés par ``monkeypatch``.
+replaced by a double via ``app.dependency_overrides`` and the
+network checks (DuckDB / Ollama) are neutralised by ``monkeypatch``.
 """
 
 from __future__ import annotations
@@ -21,14 +21,14 @@ from src.api.main import create_app
 from src.api.models import ComponentHealth
 
 # ---------------------------------------------------------------------------
-# Doubles de test
+# Test doubles
 # ---------------------------------------------------------------------------
 
 
 class FakeAgentApp:
-    """Compilable LangGraph minimal : capture les invocations et renvoie un AIMessage."""
+    """Minimal compilable LangGraph: captures invocations and returns an AIMessage."""
 
-    def __init__(self, response: str = "réponse simulée") -> None:
+    def __init__(self, response: str = "simulated response") -> None:
         self.response = response
         self.invocations: list[tuple[dict, dict | None]] = []
 
@@ -43,7 +43,7 @@ class FakeAgentApp:
 
 
 class BoomAgent:
-    """Compilable LangGraph qui lève une exception à chaque invocation."""
+    """Compilable LangGraph that raises an exception on every invocation."""
 
     def invoke(self, payload: dict, config: dict | None = None) -> dict:
         raise RuntimeError("LLM exploded")
@@ -51,13 +51,13 @@ class BoomAgent:
 
 @pytest.fixture
 def fake_agent() -> FakeAgentApp:
-    """Agent factice partagé entre tests."""
+    """Fake agent shared between tests."""
     return FakeAgentApp()
 
 
 @pytest.fixture
 def healthy_checks(monkeypatch) -> None:
-    """Neutralise les vérifications réseau de /health (duckdb + ollama OK)."""
+    """Neutralises /health network checks (duckdb + ollama OK)."""
     monkeypatch.setattr(
         api_main,
         "_check_duckdb",
@@ -72,7 +72,7 @@ def healthy_checks(monkeypatch) -> None:
 
 @pytest.fixture
 def client(fake_agent: FakeAgentApp, healthy_checks: None) -> Iterator[TestClient]:
-    """Client FastAPI prêt à l'emploi : dépendances substituées, sous-systèmes OK."""
+    """FastAPI client ready to use: dependencies replaced, subsystems OK."""
     app = create_app()
     app.dependency_overrides[get_agent_app] = lambda: fake_agent
     with TestClient(app) as c:
@@ -85,7 +85,7 @@ def client(fake_agent: FakeAgentApp, healthy_checks: None) -> Iterator[TestClien
 
 
 def test_health_ok(client: TestClient) -> None:
-    """GET /health renvoie 200 et la liste duckdb + ollama quand tout va bien."""
+    """GET /health returns 200 and the duckdb + ollama list when all is well."""
     resp = client.get("/health")
     assert resp.status_code == 200
     body = resp.json()
@@ -98,7 +98,7 @@ def test_health_ok(client: TestClient) -> None:
 def test_health_degraded_when_ollama_unreachable(
     monkeypatch, fake_agent: FakeAgentApp
 ) -> None:
-    """Si Ollama est down, /health renvoie status='degraded' et le fautif en clair."""
+    """When Ollama is down, /health returns status='degraded' with the culprit."""
     monkeypatch.setattr(
         api_main,
         "_check_duckdb",
@@ -127,54 +127,54 @@ def test_health_degraded_when_ollama_unreachable(
 
 
 # ---------------------------------------------------------------------------
-# /chat : validation Pydantic
+# /chat : Pydantic validation
 # ---------------------------------------------------------------------------
 
 
 def test_chat_rejects_empty_query(client: TestClient) -> None:
-    """POST /chat avec query vide -> 422 (Pydantic min_length=1)."""
+    """POST /chat with empty query -> 422 (Pydantic min_length=1)."""
     resp = client.post("/chat", json={"query": ""})
     assert resp.status_code == 422
 
 
 def test_chat_rejects_too_long_query(client: TestClient) -> None:
-    """POST /chat avec query > 2000 caractères -> 422 (Pydantic max_length=2000)."""
+    """POST /chat with query > 2000 chars -> 422 (Pydantic max_length=2000)."""
     resp = client.post("/chat", json={"query": "x" * 2001})
     assert resp.status_code == 422
 
 
 def test_chat_accepts_query_at_max_length(client: TestClient) -> None:
-    """POST /chat avec exactement 2000 caractères -> 200 (limite inclusive)."""
+    """POST /chat with exactly 2000 chars -> 200 (inclusive limit)."""
     resp = client.post("/chat", json={"query": "x" * 2000})
     assert resp.status_code == 200
 
 
 def test_chat_rejects_missing_query_key(client: TestClient) -> None:
-    """POST /chat sans clé ``query`` dans le JSON -> 422 (Pydantic champ requis)."""
+    """POST /chat without ``query`` key in JSON -> 422 (Pydantic required field)."""
     resp = client.post("/chat", json={"session_id": "sess-x"})
     assert resp.status_code == 422
 
 
 def test_chat_rejects_whitespace_only_query(client: TestClient) -> None:
-    """POST /chat avec query blanchâtre (``'   '``) -> 422 (field_validator)."""
+    """POST /chat with whitespace-only query -> 422 (field_validator)."""
     resp = client.post("/chat", json={"query": "   \n\t  "})
     assert resp.status_code == 422
-    # L'API n'invoque jamais l'agent pour un payload invalide.
+    # The API never invokes the agent for an invalid payload.
     assert resp.json()["detail"][0]["msg"].startswith(
-        "query ne peut pas être uniquement composée d'espaces"
-    ) or any("espaces" in err.get("msg", "") for err in resp.json()["detail"])
+        "query cannot be composed only of spaces"
+    ) or any("spaces" in err.get("msg", "") for err in resp.json()["detail"])
 
 
 # ---------------------------------------------------------------------------
-# /chat : gestion du session_id
+# /chat : session_id handling
 # ---------------------------------------------------------------------------
 
 
 def test_chat_generates_uuid_when_session_id_empty(
     client: TestClient, fake_agent: FakeAgentApp
 ) -> None:
-    """Si session_id est vide, l'API génère un UUID4 (36 chars) et le thread_id du checkpointer."""
-    resp = client.post("/chat", json={"query": "Bonjour ?"})
+    """If session_id is empty, the API generates a UUID4 (36 chars) and the checkpointer thread_id."""
+    resp = client.post("/chat", json={"query": "Hello?"})
     assert resp.status_code == 200
     body = resp.json()
     assert len(body["session_id"]) == 36
@@ -187,7 +187,7 @@ def test_chat_generates_uuid_when_session_id_empty(
 def test_chat_preserves_explicit_session_id(
     client: TestClient, fake_agent: FakeAgentApp
 ) -> None:
-    """Si session_id est fourni, l'API ne le modifie pas (ni en entrée, ni en checkpointer)."""
+    """If session_id is provided, the API does not modify it (neither input nor checkpointer)."""
     resp = client.post("/chat", json={"query": "ping", "session_id": "sess-42"})
     assert resp.status_code == 200
     body = resp.json()
@@ -202,7 +202,7 @@ def test_chat_preserves_explicit_session_id(
 def test_chat_treats_whitespace_only_session_id_as_empty(
     client: TestClient, fake_agent: FakeAgentApp
 ) -> None:
-    """Un session_id uniquement composé d'espaces est considéré comme vide."""
+    """A session_id composed only of spaces is considered empty."""
     resp = client.post("/chat", json={"query": "ping", "session_id": "   "})
     assert resp.status_code == 200
     body = resp.json()
@@ -210,46 +210,46 @@ def test_chat_treats_whitespace_only_session_id_as_empty(
 
 
 # ---------------------------------------------------------------------------
-# /chat : contrat avec l'agent
+# /chat : contract with the agent
 # ---------------------------------------------------------------------------
 
 
 def test_chat_sends_human_message_to_agent(
     client: TestClient, fake_agent: FakeAgentApp
 ) -> None:
-    """L'API envoie un HumanMessage (contenu = query) à l'agent, sans message supplémentaire."""
-    resp = client.post("/chat", json={"query": "règles du snatch ?"})
+    """The API sends a HumanMessage (content = query) to the agent, no extra message."""
+    resp = client.post("/chat", json={"query": "snatch rules?"})
     assert resp.status_code == 200
 
     payload, _ = fake_agent.invocations[-1]
     assert len(payload["messages"]) == 1
     msg = payload["messages"][0]
     assert isinstance(msg, HumanMessage)
-    assert msg.content == "règles du snatch ?"
+    assert msg.content == "snatch rules?"
 
 
 def test_chat_returns_agent_text_in_response(client: TestClient) -> None:
-    """La réponse HTTP contient le contenu textuel produit par l'agent."""
+    """The HTTP response contains the text content produced by the agent."""
     app = create_app()
-    agent = FakeAgentApp(response="Voici l'Article 5.")
+    agent = FakeAgentApp(response="Article 5 applies.")
     app.dependency_overrides[get_agent_app] = lambda: agent
 
     with TestClient(app) as c:
         resp = c.post("/chat", json={"query": "?"})
 
     assert resp.status_code == 200
-    assert resp.json()["response"] == "Voici l'Article 5."
+    assert resp.json()["response"] == "Article 5 applies."
 
 
 # ---------------------------------------------------------------------------
-# /chat : gestion d'erreurs
+# /chat : error handling
 # ---------------------------------------------------------------------------
 
 
 def test_health_degraded_when_duckdb_unreachable(
     monkeypatch, fake_agent: FakeAgentApp
 ) -> None:
-    """Si DuckDB est inaccessible, /health renvoie status='degraded' et le fautif en clair."""
+    """When DuckDB is unreachable, /health returns status='degraded' with the culprit."""
     monkeypatch.setattr(
         api_main,
         "_check_duckdb",
@@ -278,7 +278,7 @@ def test_health_degraded_when_duckdb_unreachable(
 
 
 def test_check_duckdb_ok(monkeypatch) -> None:
-    """Vérifie que _check_duckdb renvoie ok quand DuckDB répond."""
+    """Checks that _check_duckdb returns ok when DuckDB responds."""
     from src.api import main as api_main
 
     class FakeConn:
@@ -301,7 +301,7 @@ def test_check_duckdb_ok(monkeypatch) -> None:
 
 
 def test_check_duckdb_degraded_on_failure(monkeypatch) -> None:
-    """Vérifie que _check_duckdb renvoie degraded quand DuckDB est inaccessible."""
+    """Checks that _check_duckdb returns degraded when DuckDB is unreachable."""
     from src.api import main as api_main
 
     def broken_connect(*args, **kwargs):
@@ -315,7 +315,7 @@ def test_check_duckdb_degraded_on_failure(monkeypatch) -> None:
 
 
 def test_check_ollama_ok(monkeypatch) -> None:
-    """Vérifie que _check_ollama renvoie ok quand Ollama répond."""
+    """Checks that _check_ollama returns ok when Ollama responds."""
     from src.api import main as api_main
 
     class FakeResp:
@@ -331,7 +331,7 @@ def test_check_ollama_ok(monkeypatch) -> None:
 
 
 def test_check_ollama_degraded_on_connection_error(monkeypatch) -> None:
-    """Vérifie que _check_ollama renvoie degraded quand Ollama est injoignable."""
+    """Checks that _check_ollama returns degraded when Ollama is unreachable."""
     import requests
 
     from src.api import main as api_main
@@ -347,7 +347,7 @@ def test_check_ollama_degraded_on_connection_error(monkeypatch) -> None:
 
 
 def test_check_ollama_degraded_on_timeout(monkeypatch) -> None:
-    """Vérifie que _check_ollama renvoie degraded en cas de timeout."""
+    """Checks that _check_ollama returns degraded on timeout."""
     import requests
 
     from src.api import main as api_main
@@ -365,12 +365,12 @@ def test_check_ollama_degraded_on_timeout(monkeypatch) -> None:
 def test_health_degraded_when_both_unreachable(
     monkeypatch, fake_agent: FakeAgentApp
 ) -> None:
-    """Si DuckDB et Ollama sont tous deux down, /health renvoie status='degraded'."""
+    """When both DuckDB and Ollama are down, /health returns status='degraded'."""
     monkeypatch.setattr(
         api_main,
         "_check_duckdb",
         lambda path: ComponentHealth(
-            name="duckdb", status="degraded", detail="base absente"
+            name="duckdb", status="degraded", detail="database missing"
         ),
     )
     monkeypatch.setattr(
@@ -393,7 +393,7 @@ def test_health_degraded_when_both_unreachable(
 
 
 def test_chat_returns_500_when_agent_explodes(monkeypatch) -> None:
-    """Une exception de l'agent devient un 500 sans fuite du message d'origine."""
+    """An agent exception becomes a 500 without leaking the original message."""
     app = create_app()
     app.dependency_overrides[get_agent_app] = lambda: BoomAgent()
     monkeypatch.setattr(
@@ -412,11 +412,11 @@ def test_chat_returns_500_when_agent_explodes(monkeypatch) -> None:
 
     assert resp.status_code == 500
     assert "LLM exploded" not in resp.text
-    assert "Erreur interne" in resp.text
+    assert "Internal agent error" in resp.text
 
 
 class SilentAgent:
-    """Compilable LangGraph qui renvoie un état sans message (boucle avortée)."""
+    """Compilable LangGraph that returns a state with no messages (aborted loop)."""
 
     def invoke(self, payload: dict, config: dict | None = None) -> dict:
         return {
@@ -428,7 +428,7 @@ class SilentAgent:
 
 
 def test_chat_returns_502_when_agent_yields_no_messages(monkeypatch) -> None:
-    """Si l'agent renvoie ``messages: []``, l'API répond 502 (pas 500 IndexError)."""
+    """If the agent returns ``messages: []``, the API responds 502 (not 500 IndexError)."""
     app = create_app()
     app.dependency_overrides[get_agent_app] = lambda: SilentAgent()
     monkeypatch.setattr(
@@ -446,11 +446,11 @@ def test_chat_returns_502_when_agent_yields_no_messages(monkeypatch) -> None:
         resp = c.post("/chat", json={"query": "ping"})
 
     assert resp.status_code == 502
-    assert "aucune réponse" in resp.text
+    assert "produced no response" in resp.text
 
 
 def test_get_agent_app_delegates_to_get_app(monkeypatch) -> None:
-    """Vérifie que get_agent_app() appelle bien get_app importée depuis graph."""
+    """Checks that get_agent_app() calls get_app imported from graph."""
     from src.api import dependencies
 
     called = False
@@ -469,27 +469,27 @@ def test_get_agent_app_delegates_to_get_app(monkeypatch) -> None:
 
 
 def test_get_agent_app_propagates_exception(monkeypatch) -> None:
-    """Vérifie que get_agent_app() propage l'exception quand get_app() échoue.
+    """Checks that get_agent_app() propagates the exception when get_app() fails.
 
-    Si la base DuckDB est inaccessible, get_app() lève une exception
-    qui doit remonter via get_agent_app() jusqu'à l'endpoint.
+    If the DuckDB database is unreachable, get_app() raises an exception
+    that must propagate via get_agent_app() up to the endpoint.
     """
     from src.api import dependencies
 
     def broken_get_app() -> str:
-        raise RuntimeError("DuckDB indisponible")
+        raise RuntimeError("DuckDB unavailable")
 
     monkeypatch.setattr(dependencies, "get_app", broken_get_app)
 
-    with pytest.raises(RuntimeError, match="DuckDB indisponible"):
+    with pytest.raises(RuntimeError, match="DuckDB unavailable"):
         dependencies.get_agent_app()
 
 
 def test_chat_returns_500_when_get_agent_app_fails() -> None:
-    """Quand get_app() échoue (ex: DuckDB absente), POST /chat retourne 500.
+    """When get_app() fails (e.g. DuckDB missing), POST /chat returns 500.
 
-    L'exception est levée pendant la résolution de Depends(get_agent_app) : on
-    remplace la dépendance via dependency_overrides pour qu'elle lève.
+    The exception rises during Depends(get_agent_app) resolution. We
+    replace the dependency via dependency_overrides so it raises.
     """
     from src.api import dependencies
 
@@ -503,32 +503,32 @@ def test_chat_returns_500_when_get_agent_app_fails() -> None:
         resp = c.post("/chat", json={"query": "ping"})
 
     assert resp.status_code == 500
-    # L'exception dans la dépendance est catchée par Starlette,
-    # pas par le handler (qui n'est jamais atteint)
+    # The exception in the dependency is caught by Starlette,
+    # not by the handler (which is never reached)
     assert "Internal Server Error" in resp.text
 
 
 # ---------------------------------------------------------------------------
-# Factory et configuration
+# Factory and configuration
 # ---------------------------------------------------------------------------
 
 
 def test_create_app_returns_distinct_instances() -> None:
-    """Deux appels à create_app() produisent deux instances FastAPI distinctes (pas de singleton global)."""
+    """Two calls to create_app() produce two distinct FastAPI instances (no global singleton)."""
     a = create_app()
     b = create_app()
     assert a is not b
 
 
 def test_create_app_uses_settings_title_and_version() -> None:
-    """Les métadonnées OpenAPI (title, version) viennent des Settings."""
+    """OpenAPI metadata (title, version) comes from Settings."""
     app = create_app()
     assert app.title == "IWF AI Hub API"
     assert app.version == "0.1.0"
 
 
 def test_create_app_registers_expected_routes() -> None:
-    """Les routes GET /health et POST /chat sont enregistrées sur l'application."""
+    """Routes GET /health and POST /chat are registered on the application."""
     app = create_app()
     routes = {
         (r.path, tuple(sorted(r.methods)))  # type: ignore[attr-defined]

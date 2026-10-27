@@ -1,12 +1,12 @@
-"""Schémas Pydantic de l'API FastAPI IWF (Phase 5).
+"""Pydantic schemas for the IWF FastAPI API (Phase 5).
 
-Définit les modèles de requêtes et de réponses consommés par les
-endpoints. Validation stricte via Pydantic v2 (hérité de FastAPI) avec
-contraintes ``min_length`` / ``max_length`` pour borner les payloads et
-éviter les abus.
+Defines request and response models consumed by the endpoints.
+Strict validation via Pydantic v2 (inherited from FastAPI) with
+``min_length`` / ``max_length`` constraints to bound payloads and
+prevent abuse.
 
-Tous les modèles sont sérialisables en JSON ; ils alimentent
-automatiquement le schéma OpenAPI exposé par FastAPI sur ``/docs``.
+All models are JSON-serialisable. They automatically populate the
+OpenAPI schema exposed by FastAPI at ``/docs``.
 """
 
 from typing import Literal
@@ -15,12 +15,12 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class ComponentHealth(BaseModel):
-    """État d'un composant vérifié par l'endpoint ``/health``.
+    """State of a component checked by the ``/health`` endpoint.
 
     Attributes:
-        name: nom logique du composant (ex: ``duckdb``, ``ollama``).
-        status: ``ok`` si le composant répond, ``degraded`` sinon.
-        detail: message complémentaire (erreur ou information).
+        name: logical component name (e.g. ``duckdb``, ``ollama``).
+        status: ``ok`` if the component responds, ``degraded`` otherwise.
+        detail: additional message (error or information).
     """
 
     name: str
@@ -29,14 +29,14 @@ class ComponentHealth(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    """Réponse de l'endpoint ``/health``.
+    """Response of the ``/health`` endpoint.
 
     Attributes:
-        status: ``ok`` si tous les composants répondent, ``degraded``
-            sinon (l'API reste utilisable mais un sous-système est KO).
-        app_name: nom affiché de l'application.
-        app_version: version semver de l'API.
-        components: état détaillé de chaque sous-système vérifié.
+        status: ``ok`` if all components respond, ``degraded``
+            otherwise (the API remains usable but a subsystem is KO).
+        app_name: display name of the application.
+        app_version: semver version of the API.
+        components: detailed state of each checked subsystem.
     """
 
     status: Literal["ok", "degraded"]
@@ -46,51 +46,51 @@ class HealthResponse(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    """Requête utilisateur pour l'endpoint ``POST /chat``.
+    """User request for the ``POST /chat`` endpoint.
 
     Attributes:
-        query: question en langage naturel (1 à 2000 caractères).
-        session_id: identifiant de session pour la mémoire
-            conversationnelle. Optionnel et vide par défaut ; le
-            endpoint génère un UUID4 si la chaîne est vide.
+        query: natural language question (1 to 2000 characters).
+        session_id: session identifier for conversation memory.
+            Optional and empty by default. The endpoint generates a
+            UUID4 if the string is empty.
     """
 
     query: str = Field(
         ...,
         min_length=1,
         max_length=2000,
-        description="Question en langage naturel de l'utilisateur.",
+        description="Natural language question from the user.",
     )
     session_id: str = Field(
         default="",
         max_length=128,
         description=(
-            "Identifiant de session (UUID4 ou nom logique). Vide = nouvelle session."
+            "Session identifier (UUID4 or logical name). Empty = new session."
         ),
     )
 
     @field_validator("query")
     @classmethod
     def _query_not_blank(cls, value: str) -> str:
-        """Rejette les requêtes composées uniquement d'espaces ou de sauts de ligne.
+        """Rejects queries made only of spaces or line breaks.
 
-        Pydantic ``min_length=1`` accepte les chaînes blanchâtres ; ce
-        validator les refuse pour éviter que le LLM ne reçoive une
-        question vide après ``strip()``.
+        Pydantic ``min_length=1`` accepts whitespace-only strings. This
+        validator rejects them so the LLM does not receive an empty
+        question after ``strip()``.
         """
         if not value.strip():
-            raise ValueError("query ne peut pas être uniquement composée d'espaces.")
+            raise ValueError("query cannot be composed only of spaces.")
         return value
 
 
 class ChatResponse(BaseModel):
-    """Réponse de l'agent pour l'endpoint ``POST /chat``.
+    """Agent response for the ``POST /chat`` endpoint.
 
     Attributes:
-        response: contenu textuel de la réponse finale du LLM.
-        session_id: identifiant de session effectivement utilisé
-            (renvoyé tel quel ou généré si vide à l'entrée).
+        response: text content of the final LLM response.
+        session_id: session identifier actually used
+            (returned as-is or generated if empty on input).
     """
 
-    response: str = Field(..., description="Réponse textuelle finale de l'agent.")
-    session_id: str = Field(..., description="ID de session (entrée ou nouveau UUID4).")
+    response: str = Field(..., description="Final text response from the agent.")
+    session_id: str = Field(..., description="Session ID (input or new UUID4).")

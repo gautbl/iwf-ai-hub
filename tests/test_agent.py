@@ -12,11 +12,11 @@ from src.agent.state import AgentState
 
 
 def test_agent_state_schema():
-    """Vérifie que AgentState est un TypedDict exposant exactement les 4
-    clés requises, avec le reducer add_messages sur messages et les bons
-    types pour les autres champs.
+    """Checks that AgentState is a TypedDict exposing exactly the 4
+    required keys, with the add_messages reducer on messages and the
+    correct types for other fields.
     """
-    # 1. TypedDict et clés exactes
+    # 1. TypedDict and exact keys
     assert is_typeddict(AgentState)
     assert set(AgentState.__annotations__) == {
         "messages",
@@ -25,28 +25,28 @@ def test_agent_state_schema():
         "session_id",
     }
 
-    # 2. messages : Annotated[list, add_messages] (reducer LangGraph)
+    # 2. messages: Annotated[list, add_messages] (LangGraph reducer)
     messages_annotation = AgentState.__annotations__["messages"]
     assert get_origin(messages_annotation) is Annotated
     base_type, reducer = get_args(messages_annotation)
     assert base_type is list
     assert reducer is add_messages
 
-    # 3. Chunks et appels d'outils : list[dict]
+    # 3. Chunks and tool calls: list[dict]
     assert AgentState.__annotations__["retrieved_docs"] == list[dict]
     assert AgentState.__annotations__["tool_calls"] == list[dict]
 
-    # 4. session_id : str
+    # 4. session_id: str
     assert AgentState.__annotations__["session_id"] is str
 
 
 # ---------------------------------------------------------------------------
-# Outils (ETAPE 3) — mock DuckDB, jamais la base de production
+# Tools (STEP 3) — mock DuckDB, never the production database
 # ---------------------------------------------------------------------------
 
 
 class FakeConnection:
-    """Double de connexion DuckDB : capture SQL/params, renvoie des lignes fixes."""
+    """DuckDB connection double: captures SQL/params, returns fixed rows."""
 
     def __init__(
         self,
@@ -84,7 +84,7 @@ class FakeConnection:
 
 
 def _patch_connect(monkeypatch, connection: FakeConnection) -> None:
-    """Remplace duckdb.connect dans src.agent.tools par une fausse connexion."""
+    """Replaces duckdb.connect in src.agent.tools with a fake connection."""
 
     def fake_connect(path: str, read_only: bool = False) -> FakeConnection:
         connection.read_only = read_only
@@ -94,8 +94,8 @@ def _patch_connect(monkeypatch, connection: FakeConnection) -> None:
 
 
 def test_search_regulations_delegates_to_retrieval(monkeypatch):
-    """Vérifie que search_regulations délègue à retrieval.retrieve en
-    transmettant la requête, le chemin de base et top_k tels quels.
+    """Checks that search_regulations delegates to retrieval.retrieve,
+    passing the query, database path and top_k as-is.
     """
     from src.agent import tools
 
@@ -129,7 +129,7 @@ def test_search_regulations_delegates_to_retrieval(monkeypatch):
 
 
 def test_search_regulations_db_error_returns_empty(monkeypatch):
-    """Vérifie la dégradation : une erreur DuckDB renvoie une liste vide."""
+    """Checks the degraded behaviour: a DuckDB error returns an empty list."""
     import duckdb as duckdb_module
 
     from src.agent import tools
@@ -143,8 +143,8 @@ def test_search_regulations_db_error_returns_empty(monkeypatch):
 
 
 def test_query_results_query_error_returns_empty(monkeypatch):
-    """Vérifie la dégradation : une erreur DuckDB lors de l'exécution
-    de la requête (pas de la connexion) renvoie [] et ferme la connexion."""
+    """Checks the degraded behaviour: a DuckDB error during query
+    execution (not connection) returns [] and closes the connection."""
     import duckdb as duckdb_module
 
     from src.agent import tools
@@ -160,8 +160,8 @@ def test_query_results_query_error_returns_empty(monkeypatch):
 
 
 def test_query_results_partial_filters(monkeypatch):
-    """Vérifie que query_results fonctionne avec un sous-ensemble de filtres
-    (seulement category_name, sans athlete_name ni event_date)."""
+    """Checks that query_results works with a subset of filters
+    (only category_name, without athlete_name or event_date)."""
     from src.agent import tools
 
     columns = ["athlete_name", "category_name", "event_date"]
@@ -183,8 +183,8 @@ def test_query_results_partial_filters(monkeypatch):
 
 
 def test_compute_athlete_stats_query_error_returns_empty(monkeypatch):
-    """Vérifie la dégradation : une erreur DuckDB lors de la requête
-    compute_athlete_stats renvoie {} et ferme la connexion."""
+    """Checks the degraded behaviour: a DuckDB error during query
+    compute_athlete_stats returns {} and closes the connection."""
     import duckdb as duckdb_module
 
     from src.agent import tools
@@ -200,9 +200,8 @@ def test_compute_athlete_stats_query_error_returns_empty(monkeypatch):
 
 
 def test_query_results_applies_dynamic_filters(monkeypatch):
-    """Vérifie les filtres dynamiques : conditions ET, ILIKE insensible à
-    la casse, filtre de date casté en VARCHAR, ordre des paramètres.
-    """
+    """Checks dynamic filters: AND conditions, case-insensitive ILIKE,
+    date filter cast to VARCHAR, parameter order."""
     from src.agent import tools
 
     columns = [
@@ -235,7 +234,7 @@ def test_query_results_applies_dynamic_filters(monkeypatch):
 
 
 def test_query_results_without_filters(monkeypatch):
-    """Vérifie qu'aucun filtre ne génère de clause WHERE ni de paramètre."""
+    """Checks that no filter generates a WHERE clause or parameter."""
     from src.agent import tools
 
     columns = ["athlete_name", "category_name", "event_date"]
@@ -250,7 +249,7 @@ def test_query_results_without_filters(monkeypatch):
 
 
 def test_query_results_connect_error_returns_empty(monkeypatch):
-    """Vérifie la dégradation : base DuckDB absente ou illisible -> []."""
+    """Checks the degraded behaviour: missing or unreadable DuckDB -> []."""
     import duckdb as duckdb_module
 
     from src.agent import tools
@@ -264,7 +263,7 @@ def test_query_results_connect_error_returns_empty(monkeypatch):
 
 
 def test_compute_athlete_stats_found(monkeypatch):
-    """Vérifie les agrégats renvoyés pour un athlète présent en base."""
+    """Checks the aggregates returned for an athlete present in the DB."""
     from src.agent import tools
 
     columns = [
@@ -291,7 +290,7 @@ def test_compute_athlete_stats_found(monkeypatch):
 
 
 def test_compute_athlete_stats_unknown_athlete(monkeypatch):
-    """Vérifie qu'un athlète introuvable renvoie un dict vide."""
+    """Checks that an unknown athlete returns an empty dict."""
     from src.agent import tools
 
     columns = [
@@ -304,12 +303,12 @@ def test_compute_athlete_stats_unknown_athlete(monkeypatch):
     conn = FakeConnection(columns, [])
     _patch_connect(monkeypatch, conn)
 
-    assert tools.compute_athlete_stats("athlete inconnu") == {}
+    assert tools.compute_athlete_stats("unknown athlete") == {}
     assert conn.closed is True
 
 
 def test_compute_athlete_stats_db_error_returns_empty(monkeypatch):
-    """Vérifie la dégradation : une erreur DuckDB renvoie un dict vide."""
+    """Checks the degraded behaviour: a DuckDB error returns an empty dict."""
     import duckdb as duckdb_module
 
     from src.agent import tools
@@ -323,9 +322,9 @@ def test_compute_athlete_stats_db_error_returns_empty(monkeypatch):
 
 
 def test_search_regulations_unexpected_error_returns_empty(monkeypatch):
-    """Vérifie la dégradation : une exception inattendue (ex: KeyError
-    d'un embedding Ollama malformé) renvoie une liste vide sans jamais
-    remonter vers le tool_node."""
+    """Checks the degraded behaviour: an unexpected exception (e.g. KeyError
+    from a malformed Ollama embedding) returns an empty list without
+    ever reaching the tool_node."""
     from src.agent import tools
 
     def fake_retrieve(query: str, db_path: str, top_k: int = 5) -> list[dict]:
@@ -337,9 +336,9 @@ def test_search_regulations_unexpected_error_returns_empty(monkeypatch):
 
 
 def test_query_results_escapes_like_wildcards(monkeypatch):
-    """Vérifie que les caractères génériques LIKE (%, _) sont échappés
-    dans les filtres athlete_name et category_name, et que la clause
-    ESCAPE est bien présente dans le SQL généré."""
+    """Checks that LIKE wildcard characters (%, _) are escaped in
+    athlete_name and category_name filters, and that the ESCAPE
+    clause is present in the generated SQL."""
     from src.agent import tools
 
     columns = ["athlete_name", "category_name", "event_date"]
@@ -354,9 +353,9 @@ def test_query_results_escapes_like_wildcards(monkeypatch):
 
 
 def test_compute_athlete_stats_wildcards_do_not_match(tmp_path, monkeypatch):
-    """Vérifie la sémantique ESCAPE de bout en bout sur une vraie base
-    DuckDB : '_' échappé ne matche pas n'importe quel caractère, donc
-    'A_1' ne renvoie que la ligne de A_1 et pas celle de AB1."""
+    """Checks the ESCAPE semantics end-to-end on a real DuckDB
+    database: escaped '_' does not match any character, so 'A_1'
+    only returns the row for A_1 and not for AB1."""
     import duckdb as duckdb_module
 
     from src.agent import tools
@@ -391,7 +390,7 @@ def test_compute_athlete_stats_wildcards_do_not_match(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Graphe (ETAPE 4) — LLM et retrieval mockés, jamais d'Ollama réel
+# Graph (STEP 4) — LLM and retrieval mocked, never a real Ollama
 # ---------------------------------------------------------------------------
 
 import json
@@ -402,9 +401,9 @@ from src.agent import graph
 
 
 class FakeBoundLLM:
-    """Double de ChatOllama.bind_tools : capture les messages reçus et
-    renvoie une réponse AIMessage fixe (jamais de tool_calls, pour que le
-    graphe ne puisse pas boucler agent -> tools)."""
+    """Double of ChatOllama.bind_tools: captures received messages and
+    returns a fixed AIMessage response (never tool_calls, so the graph
+    cannot loop agent -> tools)."""
 
     def __init__(self, response: AIMessage):
         self._response = response
@@ -416,7 +415,7 @@ class FakeBoundLLM:
 
 
 class FakeChatOllama:
-    """Double de ChatOllama : bind_tools renvoie un FakeBoundLLM."""
+    """Double of ChatOllama: bind_tools returns a FakeBoundLLM."""
 
     def __init__(self, response: AIMessage):
         self._response = response
@@ -428,8 +427,8 @@ class FakeChatOllama:
 
 
 def test_retrieve_node(monkeypatch):
-    """Vérifie que retrieve_node délègue à tools.search_regulations et
-    expose les chunks récupérés dans retrieved_docs."""
+    """Checks that retrieve_node delegates to tools.search_regulations and
+    exposes the fetched chunks in retrieved_docs."""
     docs = [
         {
             "chunk_text": "Article 5",
@@ -458,8 +457,8 @@ def test_retrieve_node(monkeypatch):
 
 
 def test_retrieve_node_error_returns_empty(monkeypatch):
-    """Vérifie que retrieve_node dégrade vers une liste vide si
-    search_regulations lève une exception inattendue."""
+    """Checks that retrieve_node degrades to an empty list if
+    search_regulations raises an unexpected exception."""
     from src.agent import graph
 
     def fake_search(query: str, top_k: int = 5) -> list[dict]:
@@ -473,15 +472,15 @@ def test_retrieve_node_error_returns_empty(monkeypatch):
 
 
 def test_agent_node(monkeypatch):
-    """Vérifie que agent_node injecte le contexte réglementaire en
-    SystemMessage en tête des messages et renvoie la réponse du LLM mocké."""
-    fake = FakeChatOllama(AIMessage(content="réponse", tool_calls=[]))
+    """Checks that agent_node injects the regulatory context as a
+    SystemMessage at the head of messages and returns the mocked LLM response."""
+    fake = FakeChatOllama(AIMessage(content="response", tool_calls=[]))
     bound = fake.bind_tools([])
     monkeypatch.setattr(graph, "ChatOllama", fake)
     monkeypatch.setattr(graph, "_bound_llm", bound)
 
     state = {
-        "messages": [HumanMessage(content="quelles sont les règles ?")],
+        "messages": [HumanMessage(content="what are the rules?")],
         "retrieved_docs": [
             {
                 "chunk_text": "Article 5",
@@ -497,16 +496,16 @@ def test_agent_node(monkeypatch):
     result = graph.agent_node(state)
 
     assert isinstance(result["messages"][0], AIMessage)
-    assert result["messages"][0].content == "réponse"
-    # le premier message transmis au LLM est le SystemMessage de contexte
+    assert result["messages"][0].content == "response"
+    # the first message sent to the LLM is the SystemMessage context
     assert isinstance(bound.invoked_messages[0], SystemMessage)
     assert "Article 5" in bound.invoked_messages[0].content
     assert isinstance(bound.invoked_messages[1], HumanMessage)
 
 
 def test_tool_node(monkeypatch):
-    """Vérifie que tool_node dispatche les tool_calls vers tools.TOOLS et
-    produit un ToolMessage JSON par appel, avec l'appel enregistré dans
+    """Checks that tool_node dispatches tool_calls to tools.TOOLS and
+    produces one JSON ToolMessage per call, with the call recorded in
     tool_calls."""
 
     def stub(athlete_name: str) -> dict:
@@ -553,8 +552,8 @@ def test_tool_node(monkeypatch):
 
 
 def test_tool_node_dispatch_error(monkeypatch):
-    """Vérifie la dégradation : une exception d'outil produit un ToolMessage
-    {"error": ...} sans jamais remonter vers le graphe."""
+    """Checks the degraded behaviour: a tool exception produces a ToolMessage
+    {"error": ...} without ever propagating to the graph."""
 
     def broken(athlete_name: str) -> dict:
         raise RuntimeError("boom")
@@ -587,10 +586,10 @@ def test_tool_node_dispatch_error(monkeypatch):
 
 
 def test_get_app_cached_path(monkeypatch) -> None:
-    """Vérifie que get_app() construit l'app au premier appel et la met en cache.
+    """Checks that get_app() builds the app on first call and caches it.
 
-    Le test valide que build_graph n'est appelé qu'une seule fois,
-    même si get_app() est invoquée deux fois de suite.
+    This test validates that build_graph is called only once, even
+    if get_app() is invoked twice in a row.
     """
     from src.agent import graph
 
@@ -608,22 +607,22 @@ def test_get_app_cached_path(monkeypatch) -> None:
     first = graph.get_app()
     second = graph.get_app()
 
-    assert call_count == 1  # build_graph appelé une seule fois
+    assert call_count == 1  # build_graph called once
     assert first == "fake_app"
-    assert second is first  # même instance mise en cache
+    assert second is first  # same cached instance
 
 
 def test_graph_integration(monkeypatch):
-    """Test d'intégration du graphe complet sur la base de test DuckDB :
-    LLM mocké (jamais de tool_calls), retrieval mocké, checkpointer réel.
-    Nettoie les tables de checkpoints de la base de test en fin de test."""
+    """Integration test of the full graph on the DuckDB test database:
+    mocked LLM (never tool_calls), mocked retrieval, real checkpointer.
+    Cleans up checkpoint tables from the test database at the end."""
     import duckdb as duckdb_module
 
     db_path = "data/duckdb/test_iwf_hub.duckdb"
 
-    fake = FakeChatOllama(AIMessage(content="réponse finale", tool_calls=[]))
-    # build_graph instancie ChatOllama(...) : on patche avec un callable
-    # qui renvoie l'instance factice pré-construite.
+    fake = FakeChatOllama(AIMessage(content="final response", tool_calls=[]))
+    # build_graph instantiates ChatOllama(...): patch with a callable
+    # that returns the pre-built fake instance.
     monkeypatch.setattr(graph, "ChatOllama", lambda **kwargs: fake)
 
     def fake_search(query: str, top_k: int = 5) -> list[dict]:
@@ -641,8 +640,8 @@ def test_graph_integration(monkeypatch):
     monkeypatch.setattr(graph, "_app", graph.build_graph(db_path=db_path))
 
     try:
-        result = graph.run("quelles sont les règles ?", "test-session")
-        assert result == "réponse finale"
+        result = graph.run("what are the rules?", "test-session")
+        assert result == "final response"
     finally:
         conn = duckdb_module.connect(db_path)
         for table in (

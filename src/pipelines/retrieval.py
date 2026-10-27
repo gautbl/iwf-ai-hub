@@ -8,27 +8,27 @@ from src.pipelines.embeddings import EMBEDDING_DIM, EmbeddingGenerator
 
 logger = structlog.get_logger()
 
-# URL Ollama locale (surchargeable via variable d'environnement en conteneur).
+# Local Ollama URL (overridable via environment variable in container).
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
 EMBEDDING_MODEL = "nomic-embed-text"
 
 
 def retrieve(query: str, db_path: str, top_k: int = 5) -> list[dict]:
-    """Recherche les chunks les plus proches de la requête dans DuckDB VSS.
+    """Searches for the chunks closest to the query in DuckDB VSS.
 
     Args:
-        query: question en langage naturel.
-        db_path: chemin vers la base DuckDB contenant la table chunks.
-        top_k: nombre maximum de résultats retournés.
+        query: natural language question.
+        db_path: path to the DuckDB database containing the chunks table.
+        top_k: maximum number of results to return.
 
     Returns:
-        Liste de dicts {chunk_text, source, article, page, score} triés par
-        score décroissant. Liste vide si Ollama est indisponible, si le
-        vecteur retourné est invalide (RuntimeError / ValueError) ou si la
-        table chunks est vide.
+        List of dicts {chunk_text, source, article, page, score} sorted by
+        descending score. Empty list if Ollama is unavailable, if the
+        returned vector is invalid (RuntimeError / ValueError) or if the
+        chunks table is empty.
 
     Raises:
-        duckdb.Error: base DuckDB inaccessible ou requête invalide.
+        duckdb.Error: DuckDB database unreachable or invalid query.
     """
     logger.info("retrieve_start", query=query, top_k=top_k)
 
@@ -52,8 +52,8 @@ def retrieve(query: str, db_path: str, top_k: int = 5) -> list[dict]:
     try:
         conn = duckdb.connect(db_path)
 
-        # L'index HNSW ne persiste pas entre les sessions DuckDB : on recharge
-        # l'extension et on recrée l'index s'il est absent.
+        # The HNSW index does not persist across DuckDB sessions. Reload
+        # the extension and recreate the index if absent.
         conn.execute("INSTALL vss;")
         conn.execute("LOAD vss;")
         conn.execute("SET hnsw_enable_experimental_persistence = true;")

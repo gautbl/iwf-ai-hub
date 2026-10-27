@@ -1,13 +1,13 @@
-"""Graphe LangGraph de l'agent conversationnel IWF (Phase 4).
+"""LangGraph graph for the IWF conversational agent (Phase 4).
 
-Trois nœuds : retrieve (recherche VSS des réglementations), agent
-(génération de réponse via le LLM local Ollama) et tools (dispatch des
-appels d'outils vers le registre TOOLS). Le checkpointer DuckDBSaver
-persiste l'historique de session dans DuckDB.
+Three nodes: retrieve (VSS regulation search), agent
+(response generation via local Ollama LLM) and tools (dispatch
+of tool calls to the TOOLS registry). The DuckDBSaver checkpointer
+persists session history in DuckDB.
 
-Les fonctions de nœud sont définies au niveau module pour être testables
-directement (les tests mockent ``_bound_llm`` et ``tools`` sans jamais
-toucher un Ollama réel).
+Node functions are defined at module level to be testable
+directly (tests mock ``_bound_llm`` and ``tools`` without ever
+hitting a real Ollama).
 """
 
 import json
@@ -16,11 +16,11 @@ from typing import Any
 
 import duckdb
 
-# Remplacer le LC_REVIVER du module jsonplus (module-level Reviver() sans
-# allowed_objects explicite) par une instance avec allowed_objects='core'.
-# Le constructeur par défaut Reviver() émet un
-# LangChainPendingDeprecationWarning ; cette affectation s'assure que le
-# code interne du checkpointer utilise un Reviver correctement configuré.
+# Replace the jsonplus module-level Reviver() (no explicit
+# allowed_objects) with an instance using allowed_objects='core'.
+# The default Reviver() constructor emits a
+# LangChainPendingDeprecationWarning. This assignment makes sure the
+# checkpointer internal code uses a correctly configured Reviver.
 import langgraph.checkpoint.serde.jsonplus as _jp_jsonplus  # noqa: E402
 import structlog
 from langchain_core.load.load import Reviver
@@ -41,23 +41,23 @@ logger = structlog.get_logger()
 OLLAMA_BASE_URL = os.environ.get("IWF_OLLAMA_URL", "http://localhost:11434")
 LLM_MODEL = "llama3.2"
 
-# LLM lié aux outils, injecté par build_graph avant compilation. Référencé
-# au niveau module pour que les tests puissent le remplacer (monkeypatch).
+# LLM bound to tools, injected by build_graph before compilation. Lives
+# at module level so tests can replace it (monkeypatch).
 _bound_llm: Any = None
 
-# App compilée en cache (lazy singleton construit par get_app).
+# Compiled app cache (lazy singleton built by get_app).
 _app = None
 
 
 def _wrap_tool(func, name: str) -> StructuredTool:
-    """Enveloppe une fonction outil pour ChatOllama.bind_tools (note 4 de revue).
+    """Wraps a tool function for ChatOllama.bind_tools (review note 4).
 
     Args:
-        func: fonction outil du module src.agent.tools.
-        name: nom d'outil, doit correspondre à une clé du registre TOOLS.
+        func: tool function from src.agent.tools module.
+        name: tool name, must match a key in the TOOLS registry.
 
     Returns:
-        StructuredTool prêt à être lié au LLM.
+        StructuredTool ready to bind to the LLM.
     """
     return StructuredTool.from_function(
         func=func, name=name, description=(func.__doc__ or "").strip()
@@ -65,18 +65,18 @@ def _wrap_tool(func, name: str) -> StructuredTool:
 
 
 def retrieve_node(state: AgentState) -> dict:
-    """Nœud de retrieval : recherche les extraits réglementaires pertinents.
+    """Retrieval node: searches for relevant regulation snippets.
 
-    Extrait la dernière question humaine de la conversation et délègue à
-    tools.search_regulations (VSS via src/pipelines/retrieval.py). En cas
-    d'erreur, le nœud dégrade vers une liste vide sans faire planter le
-    graphe.
+    Extracts the last human question from the conversation and delegates to
+    tools.search_regulations (VSS via src/pipelines/retrieval.py). On
+    error, the node degrades to an empty list without crashing the
+    graph.
 
     Args:
-        state: état courant de l'agent.
+        state: current agent state.
 
     Returns:
-        Dict avec la clé retrieved_docs (liste de chunks {chunk_text,
+        Dict with key retrieved_docs (list of chunks {chunk_text,
         source, article, page, score}).
     """
     query = next(
@@ -92,18 +92,18 @@ def retrieve_node(state: AgentState) -> dict:
 
 
 def agent_node(state: AgentState) -> dict:
-    """Nœud agent : génère la réponse via le LLM local.
+    """Agent node: generates the response via the local LLM.
 
-    Si des chunks réglementaires ont été récupérés, ils sont injectés en
-    tête de la conversation sous forme de SystemMessage de contexte. La
-    réponse du LLM (éventuellement porteuse de tool_calls) est ajoutée
-    aux messages.
+    If regulation chunks were retrieved, they inject at the
+    head of the conversation as a SystemMessage context. The
+    LLM response (possibly carrying tool_calls) appends to
+    the messages.
 
     Args:
-        state: état courant de l'agent.
+        state: current agent state.
 
     Returns:
-        Dict avec la clé messages contenant la réponse du LLM.
+        Dict with key messages containing the LLM response.
     """
     messages = list(state["messages"])
     if state.get("retrieved_docs"):
@@ -113,26 +113,26 @@ def agent_node(state: AgentState) -> dict:
             for d in state["retrieved_docs"]
         )
         messages = [
-            SystemMessage(content="Contexte réglementaire IWF :\n" + context)
+            SystemMessage(content="IWF regulatory context:\n" + context)
         ] + messages
     response = _bound_llm.invoke(messages)
     return {"messages": [response]}
 
 
 def tool_node(state: AgentState) -> dict:
-    """Nœud d'outils : dispatch des tool_calls vers le registre TOOLS.
+    """Tools node: dispatches tool_calls to the TOOLS registry.
 
-    Chaque appel du dernier message (AIMessage) est exécuté via
-    tools.TOOLS[name](**args). Le résultat est sérialisé en JSON dans un
-    ToolMessage. Une exception d'outil est capturée et transformée en
-    {"error": ...} : le graphe ne plante jamais sur un échec d'outil.
+    Each call from the last message (AIMessage) executes via
+    tools.TOOLS[name](**args). The result serialises to JSON in a
+    ToolMessage. A tool exception is caught and transformed to
+    {"error": ...}: the graph never crashes on a tool failure.
 
     Args:
-        state: état courant de l'agent.
+        state: current agent state.
 
     Returns:
-        Dict avec les clés messages (ToolMessages) et tool_calls (appels
-        exécutés).
+        Dict with keys messages (ToolMessages) and tool_calls (executed
+        calls).
     """
     executed: list[dict] = []
     new_messages: list[ToolMessage] = []
@@ -153,32 +153,32 @@ def tool_node(state: AgentState) -> dict:
 
 
 def route(state: AgentState) -> str:
-    """Routeur : renvoie "tools" si l'agent a émis des tool_calls, sinon "end".
+    """Router: returns "tools" if the agent emitted tool_calls, else "end".
 
     Args:
-        state: état courant de l'agent.
+        state: current agent state.
 
     Returns:
-        Nom de la destination : "tools" ou "end".
+        Destination name: "tools" or "end".
     """
     last = state["messages"][-1]
     return "tools" if getattr(last, "tool_calls", None) else "end"
 
 
 def build_graph(db_path: str = tools.DB_PATH, ollama_url: str | None = None) -> CompiledStateGraph:
-    """Construit et compile le graphe avec un checkpointer DuckDB sur db_path.
+    """Builds and compiles the graph with a DuckDB checkpointer on db_path.
 
-    Le LLM ChatOllama (llama3.2, endpoint local) est lié aux outils
-    query_results et compute_athlete_stats ; search_regulations n'est PAS
-    lié car le nœud retrieve possède la recherche. Le checkpointer
-    DuckDBSaver est initialisé (setup) pour créer les tables de
-    checkpoints avant compilation.
+    The ChatOllama LLM (llama3.2, local endpoint) binds to tools
+    query_results and compute_athlete_stats. search_regulations is NOT
+    bound because the retrieve node handles the search. The DuckDBSaver
+    checkpointer initialises (setup) to create checkpoint tables
+    before compilation.
 
     Args:
-        db_path: chemin de la base DuckDB (production par défaut).
+        db_path: path to the DuckDB database (production by default).
 
     Returns:
-        App LangGraph compilée, prête pour invoke.
+        Compiled LangGraph app, ready for invoke.
     """
     global _bound_llm
     llm = ChatOllama(model=LLM_MODEL, base_url=ollama_url or OLLAMA_BASE_URL)
@@ -205,10 +205,10 @@ def build_graph(db_path: str = tools.DB_PATH, ollama_url: str | None = None) -> 
 
 
 def get_app():
-    """Construit l'app une seule fois (lazy singleton) et la met en cache.
+    """Builds the app once (lazy singleton) and caches it.
 
     Returns:
-        App LangGraph compilée (mise en cache dans le module).
+        Compiled LangGraph app (cached in the module).
     """
     global _app
     if _app is None:
@@ -217,16 +217,16 @@ def get_app():
 
 
 def run(query: str, session_id: str) -> str:
-    """Lance une session de l'agent et retourne la réponse finale.
+    """Runs an agent session and returns the final response.
 
     Args:
-        query: question en langage naturel de l'utilisateur.
-        session_id: identifiant de session, utilisé comme thread_id du
-            checkpointer DuckDB (la mémoire de conversation persiste entre
-            les appels d'un même thread).
+        query: natural language question from the user.
+        session_id: session identifier, used as thread_id for the
+            DuckDB checkpointer (conversation memory persists across
+            calls from the same thread).
 
     Returns:
-        Contenu textuel du dernier message de la réponse.
+        Text content of the last response message.
     """
     app = get_app()
     result = app.invoke(

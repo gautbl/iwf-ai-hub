@@ -12,7 +12,7 @@ import pytest
 
 
 def test_data_extractor_is_abstract() -> None:
-    """Checks that DataExtractor is an abstract class and cannot be instantiated.""""
+    """Checks that DataExtractor is an abstract class and cannot be instantiated."""
     from src.pipelines.extract_results import DataExtractor
 
     with pytest.raises(TypeError):
@@ -61,7 +61,7 @@ def test_data_loader_with_event_id(tmp_path) -> None:
 
 
 def test_data_loader_without_event_id(tmp_path) -> None:
-    """Checks that DataLoader.load_to_duckdb without event_id uses CREATE OR REPLACE TABLE.""""
+    """Checks that DataLoader.load_to_duckdb without event_id uses CREATE OR REPLACE TABLE."""
     from pandas import DataFrame
 
     from src.pipelines.extract_results import DataLoader

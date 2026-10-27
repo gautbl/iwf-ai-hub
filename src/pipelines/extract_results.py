@@ -11,49 +11,49 @@ logger = structlog.get_logger()
 
 
 class DataExtractor(ABC):
-    """Interface d'extraction de données brutes depuis une source externe.
+    """Interface for extracting raw data from an external source.
 
-    Les sous-classes concrètes implémentent fetch_data() pour récupérer
-    un DataFrame depuis une URL, une API ou un fichier local.
+    Concrete subclasses implement fetch_data() to get a DataFrame
+    from a URL, an API or a local file.
     """
 
     @abstractmethod
     def fetch_data(self) -> DataFrame:
-        """Récupère les données depuis la source et les retourne sous forme de DataFrame.
+        """Fetches data from the source and returns it as a DataFrame.
 
         Returns:
-            DataFrame contenant les données extraites.
+            DataFrame with the extracted data.
 
         Raises:
-            requests.exceptions.RequestException: échec de la requête HTTP.
+            requests.exceptions.RequestException: HTTP request failed.
         """
 
 
 class OpenWeightliftingExtractor(DataExtractor):
-    """Extracteur spécialisé pour les données OpenWeightlifting.
+    """Specialised extractor for OpenWeightlifting data.
 
-    Récupère un fichier CSV depuis le dépôt GitHub openweightlifting
-    et le charge dans un DataFrame. En production, les headers HTTP
-    et l'authentification seraient gérés par le sous-classement.
+    Fetches a CSV file from the openweightlifting GitHub repository
+    and loads it into a DataFrame. In production, HTTP headers
+    and authentication would be handled by subclassing.
     """
 
     def __init__(self, url: str):
-        """Initialise l'extracteur avec l'URL du fichier CSV.
+        """Initialises the extractor with the CSV file URL.
 
         Args:
-            url: URL complète vers le fichier CSV sur GitHub.
+            url: complete URL to the CSV file on GitHub.
         """
         self.url = url
 
     def fetch_data(self) -> DataFrame:
-        """Télécharge le CSV depuis l'URL configurée et le retourne en DataFrame.
+        """Downloads the CSV from the configured URL and returns a DataFrame.
 
         Returns:
-            DataFrame contenant les lignes du fichier CSV.
+            DataFrame with the CSV file rows.
 
         Raises:
-            requests.exceptions.RequestException: échec HTTP (timeout, 4xx, 5xx).
-            pd.errors.EmptyDataError: fichier CSV vide ou invalide.
+            requests.exceptions.RequestException: HTTP failure (timeout, 4xx, 5xx).
+            pd.errors.EmptyDataError: CSV file empty or invalid.
         """
         response = requests.get(self.url, timeout=30)
         response.raise_for_status()
@@ -61,31 +61,31 @@ class OpenWeightliftingExtractor(DataExtractor):
 
 
 class DataLoader:
-    """Chargeur de DataFrames dans DuckDB (zone Raw).
+    """Loader of DataFrames into DuckDB (Raw zone).
 
-    Deux modes de fonctionnement :
-    - Sans event_id : crée ou remplace la table (``CREATE OR REPLACE``).
-    - Avec event_id : insère dans une table unifiée en supprimant
-      les lignes du même event_id avant insertion (idempotent).
+    Two operation modes:
+    - Without event_id: creates or replaces the table (``CREATE OR REPLACE``).
+    - With event_id: inserts into a unified table by deleting rows of the
+      same event_id before insertion (idempotent).
     """
 
     def __init__(self, db_path: str):
-        """Initialise le chargeur avec le chemin de la base DuckDB.
+        """Initialises the loader with the DuckDB database path.
 
         Args:
-            db_path: chemin vers le fichier DuckDB (créé si inexistant).
+            db_path: path to the DuckDB file (created if non-existent).
         """
         self.db_path = db_path
 
     def load_to_duckdb(
         self, df: DataFrame, table_name: str, event_id: int | None = None
     ) -> None:
-        """Charge un DataFrame dans une table DuckDB préfixée par ``raw_``.
+        """Loads a DataFrame into a DuckDB table prefixed by ``raw_``.
 
         Args:
-            df: données à insérer.
-            table_name: nom logique de la table (préfixé par ``raw_`` en base).
-            event_id: identifiant d'événement (None = remplacement total).
+            df: data to insert.
+            table_name: logical table name (prefixed by ``raw_`` in DB).
+            event_id: event identifier (None = full replacement).
         """
         conn = duckdb.connect(self.db_path)
         if event_id is None:
@@ -104,7 +104,7 @@ class DataLoader:
         conn.close()
 
 
-# Exemple d'exécution
+# Execution example
 if __name__ == "__main__":
     BASE_URL = (
         "https://raw.githubusercontent.com/euanwm/openweightlifting/"

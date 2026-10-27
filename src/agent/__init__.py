@@ -1,8 +1,8 @@
-"""Point d'entrée public de l'agent conversationnel LangGraph IWF (Phase 4).
+"""Public entry point for the IWF LangGraph conversational agent (Phase 4).
 
-Ce module expose uniquement la fonction `run` (exécution d'une requête
-utilisateur) et le type `AgentState` (état du graphe). Tout autre symbole
-interne reste privé.
+This module exposes only the `run` function (execute a user query)
+and the `AgentState` type (graph state). All other internal symbols
+stay private.
 """
 
 from src.agent.graph import run

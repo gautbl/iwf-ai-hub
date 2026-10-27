@@ -1,8 +1,8 @@
-"""Configuration de l'API FastAPI IWF (Phase 5).
+"""Configuration of the IWF FastAPI API (Phase 5).
 
-Paramètres chargés via pydantic-settings, surchargeables par variables
-d'environnement préfixées par ``IWF_`` (ex: ``IWF_PORT=8080``). Ces clés
-seront injectées dans les ConfigMaps Kubernetes en production.
+Parameters loaded via pydantic-settings, overridable by environment
+variables prefixed with ``IWF_`` (e.g. ``IWF_PORT=8080``). These keys
+inject into Kubernetes ConfigMaps in production.
 """
 
 from functools import lru_cache
@@ -12,17 +12,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Paramètres de l'application FastAPI.
+    """Settings for the FastAPI application.
 
     Attributes:
-        app_name: nom affiché de l'application.
-        app_version: version semver de l'API.
-        host: interface d'écoute (0.0.0.0 en conteneur, 127.0.0.1 en local).
-        port: port d'écoute HTTP.
-        log_level: niveau de log structlog (DEBUG, INFO, WARNING, ERROR, CRITICAL).
-        duckdb_path: chemin vers la base DuckDB de production.
-        ollama_url: endpoint local Ollama pour embeddings et LLM.
-        llm_model: nom du modèle de chat local (ex: llama3.2).
+        app_name: display name of the application.
+        app_version: semver version of the API.
+        host: listen interface (0.0.0.0 in container, 127.0.0.1 local).
+        port: HTTP listen port.
+        log_level: structlog log level (DEBUG, INFO, WARNING, ERROR, CRITICAL).
+        duckdb_path: path to the production DuckDB database.
+        ollama_url: local Ollama endpoint for embeddings and LLM.
+        llm_model: name of the local chat model (e.g. llama3.2).
     """
 
     model_config = SettingsConfigDict(
@@ -43,9 +43,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    """Retourne une instance unique des paramètres (cache clairable en tests).
+    """Returns a single instance of the settings (clearable cache in tests).
 
     Returns:
-        Instance de Settings chargée depuis l'environnement.
+        Settings instance loaded from the environment.
     """
     return Settings()

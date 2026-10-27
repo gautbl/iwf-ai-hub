@@ -1,23 +1,22 @@
-"""Application FastAPI IWF (Phase 5).
+"""IWF FastAPI application (Phase 5).
 
-Expose l'agent conversationnel LangGraph (Phase 4) au travers de
-deux endpoints :
+Exposes the LangGraph agent (Phase 4) through two endpoints:
 
-- ``GET  /health`` : état de l'API et de ses sous-systèmes (DuckDB,
-  Ollama). Statut ``ok`` ou ``degraded`` selon la disponibilité.
-- ``POST /chat``   : un tour de conversation. Délègue à l'agent
-  injecté via ``get_agent_app`` et renvoie la réponse textuelle
-  avec l'identifiant de session (UUID4 généré si absent).
+- ``GET  /health``: health of the API and its subsystems (DuckDB,
+  Ollama). Status ``ok`` or ``degraded`` based on availability.
+- ``POST /chat``: one conversation turn. Delegates to the agent
+  injected via ``get_agent_app`` and returns the text response
+  with the session identifier (UUID4 generated if absent).
 
-L'application est construite par la factory ``create_app()`` afin de
-permettre aux tests d'utiliser ``TestClient`` et ``dependency_overrides``
-sans instancier Ollama ni toucher la base de production.
+The application is built by the factory ``create_app()`` so tests
+can use ``TestClient`` and ``dependency_overrides`` without
+instantiating Ollama or touching the production database.
 
-Lancement (développement) :
+Startup (development):
 
     uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 
-ou via la factory :
+or via the factory:
 
     uvicorn src.api.main:create_app --factory
 """
@@ -49,13 +48,13 @@ logger = structlog.get_logger()
 
 
 # ---------------------------------------------------------------------------
-# Cycle de vie
+# Lifecycle
 # ---------------------------------------------------------------------------
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Log structlog au démarrage et à l'arrêt de l'application."""
+    """structlog log on startup and shutdown of the application."""
     settings = get_settings()
     logger.info(
         "api_startup",
@@ -69,12 +68,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 # ---------------------------------------------------------------------------
-# Health checks sous-systèmes
+# Subsystem health checks
 # ---------------------------------------------------------------------------
 
 
 def _check_duckdb(path: str) -> ComponentHealth:
-    """Vérifie que la base DuckDB est lisible (SELECT 1)."""
+    """Checks that the DuckDB database is readable (SELECT 1)."""
     try:
         conn = duckdb.connect(path, read_only=True)
         try:
@@ -87,7 +86,7 @@ def _check_duckdb(path: str) -> ComponentHealth:
 
 
 def _check_ollama(url: str) -> ComponentHealth:
-    """Vérifie que le service Ollama répond (GET /api/tags, timeout 2 s)."""
+    """Checks that the Ollama service responds (GET /api/tags, timeout 2s)."""
     try:
         resp = requests.get(f"{url.rstrip('/')}/api/tags", timeout=2.0)
         resp.raise_for_status()
@@ -102,10 +101,10 @@ def _check_ollama(url: str) -> ComponentHealth:
 
 
 def create_app() -> FastAPI:
-    """Construit et configure l'application FastAPI (factory pour les tests).
+    """Builds and configures the FastAPI application (factory for tests).
 
     Returns:
-        Instance de ``FastAPI`` avec les routes ``/health`` et ``/chat``.
+        ``FastAPI`` instance with ``/health`` and ``/chat`` routes.
     """
     settings = get_settings()
 
@@ -117,7 +116,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health", response_model=HealthResponse, tags=["meta"])
     def health() -> HealthResponse:
-        """Sanity check des sous-systèmes (DuckDB, Ollama)."""
+        """Sanity check of subsystems (DuckDB, Ollama)."""
         components = [
             _check_duckdb(settings.duckdb_path),
             _check_ollama(settings.ollama_url),
@@ -137,13 +136,13 @@ def create_app() -> FastAPI:
         payload: ChatRequest,
         agent: CompiledStateGraph = Depends(get_agent_app),
     ) -> ChatResponse:
-        """Un tour de conversation avec l'agent conversationnel.
+        """One conversation turn with the agent.
 
-        Le payload est validé par Pydantic (``min_length=1``,
-        ``max_length=2000``). Si ``session_id`` est vide, un UUID4
-        est généré côté serveur. Toute exception levée par
-        l'agent est convertie en ``HTTPException 500`` avec un
-        log structlog ; la stacktrace ne fuite jamais.
+        The payload is validated by Pydantic (``min_length=1``,
+        ``max_length=2000``). If ``session_id`` is empty, a UUID4
+        is generated server-side. Any exception from the agent is
+        converted to ``HTTPException 500`` with a structlog log.
+        The stacktrace never leaks.
         """
         session_id = payload.session_id.strip() or str(uuid.uuid4())
         try:
@@ -164,7 +163,7 @@ def create_app() -> FastAPI:
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erreur interne de l'agent.",
+                detail="Internal agent error.",
             ) from exc
 
         if not result.get("messages"):
@@ -174,7 +173,7 @@ def create_app() -> FastAPI:
             )
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="L'agent n'a produit aucune réponse.",
+                detail="The agent produced no response.",
             )
 
         last = result["messages"][-1]
@@ -184,7 +183,7 @@ def create_app() -> FastAPI:
     return app
 
 
-# Singleton au niveau module pour `uvicorn src.api.main:app`.
+# Module-level singleton for `uvicorn src.api.main:app`.
 app = create_app()
 
 

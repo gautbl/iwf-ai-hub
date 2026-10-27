@@ -4,12 +4,12 @@ import structlog
 
 logger = structlog.get_logger()
 
-# Dimension du modèle d'embedding Ollama nomic-embed-text.
+# Dimension of the Ollama nomic-embed-text embedding model.
 EMBEDDING_DIM = 768
 
 
 class EmbeddingGenerator:
-    """Génère des embeddings via Ollama local et les stocke dans DuckDB VSS."""
+    """Generates embeddings via local Ollama and stores in DuckDB VSS."""
 
     def __init__(
         self,
@@ -24,19 +24,19 @@ class EmbeddingGenerator:
         self.timeout = timeout
 
     def embed_text(self, text: str) -> list[float]:
-        """Vectorise un texte via l'API Ollama locale.
+        """Vectorises text via the local Ollama API.
 
         Args:
-            text: texte à vectoriser.
+            text: text to vectorise.
 
         Returns:
-            Le vecteur d'embedding (dimension 768).
+            The embedding vector (dimension 768).
 
         Raises:
-            requests.exceptions.ConnectionError: Ollama injoignable.
-            requests.exceptions.Timeout: délai dépassé.
-            RuntimeError: réponse HTTP différente de 200.
-            ValueError: dimension du vecteur différente de 768.
+            requests.exceptions.ConnectionError: Ollama unreachable.
+            requests.exceptions.Timeout: timeout exceeded.
+            RuntimeError: HTTP response different from 200.
+            ValueError: vector dimension different from 768.
         """
         url = f"{self.ollama_url}/api/embeddings"
         payload = {"model": self.model_name, "prompt": text}
@@ -56,41 +56,41 @@ class EmbeddingGenerator:
 
         vector = response.json()["embedding"]
         if len(vector) != EMBEDDING_DIM:
-            raise ValueError(f"Dimension inattendue : {len(vector)}")
+            raise ValueError(f"Unexpected dimension: {len(vector)}")
         return vector
 
     def generate_embeddings(self, texts: list[str]) -> list[list[float]]:
-        """Vectorise une liste de textes.
+        """Vectorises a list of texts.
 
-        L'endpoint Ollama /api/embeddings accepte un seul prompt par requête,
-        d'où des appels unitaires plutôt qu'un batch.
+        The Ollama /api/embeddings endpoint accepts one prompt per request,
+        hence single calls instead of a batch.
 
         Args:
-            texts: textes à vectoriser.
+            texts: texts to vectorise.
 
         Returns:
-            Liste de vecteurs d'embedding.
+            List of embedding vectors.
         """
         return [self.embed_text(text) for text in texts]
 
     def store_chunks(self, chunks: list[dict], table_name: str = "chunks") -> int:
-        """Stocke les chunks vectorisés dans DuckDB (idempotent par id).
+        """Stores vectorised chunks in DuckDB (idempotent by id).
 
-        La table est créée par init.sql (source de vérité du schéma) ; ce
-        module ne la recrée pas.
+        The table is created by init.sql (schema source of truth). This
+        module does not recreate it.
 
         Args:
-            chunks: liste de dicts {id, source, article, page, chunk_text}.
-            table_name: nom de la table cible.
+            chunks: list of dicts {id, source, article, page, chunk_text}.
+            table_name: name of the target table.
 
         Returns:
-            Le nombre de chunks réellement insérés (les doublons sont ignorés).
+            The number of chunks actually inserted (duplicates are skipped).
         """
         conn = duckdb.connect(self.db_path)
         inserted = 0
         try:
-            # L'index HNSW de la table chunks impose de charger vss dans
-            # la session courante avant toute modification de la table.
+            # The HNSW index on the chunks table requires loading vss in
+            # the current session before any table modification.
             conn.execute("INSTALL vss;")
             conn.execute("LOAD vss;")
             for chunk in chunks:

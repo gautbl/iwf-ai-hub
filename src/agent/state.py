@@ -1,8 +1,8 @@
-"""Etat de l'agent conversationnel IWF (LangGraph, Phase 4).
+"""State of the IWF conversational agent (LangGraph, Phase 4).
 
-Définit le schéma d'état partagé par les nœuds du graphe : messages
-(conversation), retrieved_docs (chunks VSS), tool_calls (appels d'outils)
-et session_id (thread du checkpointer DuckDB).
+Defines the shared state schema used by graph nodes: messages
+(conversation), retrieved_docs (VSS chunks), tool_calls (tool calls)
+and session_id (DuckDB checkpointer thread).
 """
 
 from typing import Annotated, TypedDict
@@ -11,20 +11,19 @@ from langgraph.graph.message import add_messages
 
 
 class AgentState(TypedDict):
-    """État partagé par les nœuds du graphe LangGraph.
+    """State shared by the LangGraph graph nodes.
 
     Attributes:
-        messages: historique de la conversation (messages LangChain).
-            La clé est annotée avec le reducer ``add_messages`` : les
-            nouveaux messages sont concaténés à l'historique existant
-            au lieu de le remplacer.
-        retrieved_docs: chunks réglementaires récupérés par le nœud de
-            retrieval VSS, au format {chunk_text, source, article,
-            page, score} (sortie de src/pipelines/retrieval.py).
-        tool_calls: appels d'outils émis par l'agent et leurs résultats
+        messages: conversation history (LangChain messages).
+            The key uses the ``add_messages`` reducer: new messages
+            concatenate to the existing history instead of replacing it.
+        retrieved_docs: regulation chunks from the VSS retrieval node,
+            format {chunk_text, source, article, page, score} (output
+            of src/pipelines/retrieval.py).
+        tool_calls: tool calls made by the agent and their results
             (query_results, compute_athlete_stats).
-        session_id: identifiant de session utilisé comme thread_id par
-            le checkpointer DuckDBSaver.
+        session_id: session id used as thread_id by the DuckDBSaver
+            checkpointer.
     """
 
     messages: Annotated[list, add_messages]
