@@ -1,15 +1,15 @@
 # IWF AI Hub
 
-Plateforme d'intelligence augmentée pour l'International Weightlifting Federation (IWF).
-Architecture moderne de Data + IA, migrée de Docker Compose vers Kubernetes pour la scalabilité
+Plateforme d'IA pour l'International Weightlifting Federation (IWF).
+Architecture Data + IA avec Docker Compose pour la scalabilité
 et la souveraineté des données.
 
 ---
 
-## 🎯 Problème métier
+## Problème métier
 
 L'IWF gère un volume croissant de données (résultats de compétitions, réglementations anti-dopage,
-historiques athlètes) réparties dans des PDFs non structurés et des bases de données hétérogènes.
+historiques athlètes) dans des PDFs et bases de données hétérogènes.
 
 **Objectifs :**
 - Centraliser et structurer les données IWF (ETL moderne)
@@ -19,291 +19,200 @@ historiques athlètes) réparties dans des PDFs non structurés et des bases de 
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 graph TB
 
-    subgraph DataSources["📥 Sources de données"]
-        PDF[📄 PDFs Réglementations IWF]
-        CSV[📊 CSV Résultats compétitions]
-        API_EXT[🌐 APIs externes IWF]
+    subgraph DataSources["Sources de donnees"]
+        PDF[PDFs Reglementations IWF]
+        CSV[CSV Resultats competitions]
+        API_EXT[APIs externes IWF]
     end
 
-    subgraph Ingestion["🔄 Ingestion & ETL"]
-        AIRFLOW[Apache Airflow<br/>Orchestration]
-        DBT[dbt<br/>Transformation SQL]
+    subgraph Ingestion["Ingestion and ETL"]
+        AIRFLOW[Apache Airflow]
+        DBT[dbt]
     end
 
-    subgraph Storage["🗄️ Stockage"]
-        DUCKDB[(DuckDB<br/>SQL + Vectoriel VSS)]
-        VSS[Extension VSS<br/>HNSW Index]
+    subgraph Storage["Stockage"]
+        DUCKDB[DuckDB SQL + VSS]
+        VSS[Extension VSS HNSW]
     end
 
-    subgraph AI["🤖 Intelligence Artificielle"]
-        OLLAMA[Ollama<br/>LLM Local]
-        EMBED[Embeddings<br/>Modèle local]
-        RAG[RAG Pipeline<br/>Retrieval + Génération]
-        AGENT[Agent LangGraph<br/>Mémoire + Outils]
+    subgraph AI["Intelligence Artificielle"]
+        OLLAMA[Ollama LLM Local]
+        EMBED[Embeddings]
+        RAG[RAG Pipeline]
+        AGENT[Agent LangGraph]
     end
 
-    subgraph API["🌐 Exposition API"]
-        FASTAPI[FastAPI<br/>REST Endpoints]
+    subgraph API["Exposition API"]
+        FASTAPI[FastAPI REST]
         AUTH[Auth X-API-Key]
-        MONITOR[Prometheus<br/>Métriques]
-    end
-
-    subgraph K8s["☸️ Infrastructure Kubernetes"]
-        NS[Namespace iwf-ai-hub]
-        INGRESS[Ingress Controller]
-        PV[Persistent Volumes<br/>DuckDB data]
+        MONITOR[Prometheus Metriques]
     end
 
     CSV --> AIRFLOW
     PDF --> AIRFLOW
     AIRFLOW --> DBT
     DBT --> DUCKDB
-    
+
     DUCKDB --> VSS
     VSS --> RAG
     OLLAMA --> EMBED
     EMBED --> VSS
     RAG --> AGENT
-    
+
     AGENT --> FASTAPI
     FASTAPI --> AUTH
     FASTAPI --> MONITOR
-    
-    INGRESS --> FASTAPI
-    PV --> DUCKDB
-    
-    style K8s fill:#e1f5fe
-    style AI fill:#fff3e0
-    style AIRFLOW fill:#e8f5e9
 ```
 
-### 📖 Légende du diagramme d'architecture
-
-#### Types de nœuds
-
-Symbole | Type | Description |
-|---|---|---|
-| 📄 📊 🌐 | Sources de données | Documents non structurés (PDFs), fichiers CSV, APIs externes |
-| 🔄 | Orchestration ETL | Apache Airflow pour le scheduling et dbt pour la transformation |
-| 🗄️ | Stockage | DuckDB avec extension VSS pour SQL + recherche vectorielle |
-| 🤖 | Intelligence Artificielle | Ollama (LLM local), embeddings, RAG et agent conversationnel |
-| 🌐 | API & Sécurité | FastAPI pour l'exposition REST, authentification et monitoring |
-| ☸️ | Infrastructure | Kubernetes pour l'orchestration des conteneurs en production |
-
-#### Flux de données
-
-Flèche | Signification |
-|---|---|
-| → | Flux de données : Déplacement ou transformation de données entre composants |
-| CSV/PDF → Airflow | Ingestion des sources brutes vers l'orchestrateur |
-| Airflow → dbt → DuckDB | Pipeline ETL : extraction, transformation, chargement |
-| DuckDB → VSS → RAG | Recherche vectorielle pour alimenter le RAG |
-| Ollama → Embeddings → VSS | Génération d'embeddings locaux et stockage |
-| Agent → FastAPI | Exposition de l'agent IA via API REST |
-| Ingress → FastAPI | Routage externe vers les services Kubernetes |
-
-#### Couleurs (styles)
-
-Couleur | Composant | Raison |
-|---|---|---|
-| 🟢 Vert clair | Airflow | Orchestration centrale du pipeline |
-| 🟠 Orange | IA | Couche intelligence artificielle |
-| 🔵 Bleu clair | Kubernetes | Infrastructure cloud-native |
-
 ---
 
+## Stack Technique
 
-
-## 🛠️ Stack Technique
-
-| Composant | Technologie | Rôle | Environnement |
+| Composant | Technologie | Role | Environnement |
 |---|---|---|---|
-| Orchestration | Apache Airflow | DAGs ETL, scheduling | Docker / Kubernetes |
-| Transformation | dbt + DuckDB | Modélisation Star Schema | Container (via Airflow) |
-| Traitement distribué | PySpark | Miroir Silver + validation parité (Phase 2.5) | Docker pyspark-notebook / venv dédié |
-| Base de données | DuckDB + VSS | SQL + Vector Search | Container / K8s |
-| LLM & Embeddings | Ollama | LLM local, souveraineté | Container / K8s |
+| Orchestration | Apache Airflow | DAGs ETL, scheduling | Docker |
+| Transformation | dbt + DuckDB | Star Schema | Container (via Airflow) |
+| Traitement distribue | PySpark | Miroir Silver (Phase 2.5) | Docker / venv dedie |
+| Base de donnees | DuckDB + VSS | SQL + Vector Search | Container |
+| LLM and Embeddings | Ollama | LLM local, souverainete | Container |
 | Agent IA | LangGraph | Workflow conversationnel | .venv |
-| API | FastAPI | Exposition REST | Container / K8s |
+| API | FastAPI | Exposition REST | .venv / Container |
 | Conteneurisation | Docker + Compose | Dev local | Local |
-| Orchestration | Kubernetes | Production, scalabilité | Minikube / Cluster |
-| Packaging | Helm | Déploiement K8s | K8s |
-| CI/CD | GitLab CI | Build, test, deploy | GitLab |
-| Monitoring | Prometheus/Grafana | Observabilité | K8s |
+| Monitoring | Prometheus/Grafana | Observabilite | Docker |
 
 ---
 
-## 📁 Structure du projet
+## Structure du projet
 
 ```
 iwf-ai-hub/
 │
-├── 📁 k8s/                             # ⭐ Phase 6 (planned) — Déploiement Kubernetes
-│   ├── namespace.yaml                   # Isolation iwf-ai-hub
-│   ├── configmap.yaml                   # Variables d'environnement
-│   ├── secrets.yaml                     # Credentials (template)
-│   ├── duckdb-statefulset.yaml          # Base de données persistante
-│   ├── duckdb-service.yaml              # Service interne DuckDB
-│   ├── ollama-deployment.yaml           # LLM local
-│   ├── ollama-service.yaml
-│   ├── airflow-deployment.yaml          # Orchestration
-│   ├── api-deployment.yaml              # FastAPI
-│   ├── api-service.yaml
-│   └── ingress.yaml                     # Exposition externe
+├── dags/                             # Airflow Workflows
+│   ├── dag_etl_results.py
+│   └── dag_ingest_rules.py
 │
-├── 📁 helm/                             # ⭐ Phase 6 (planned) — Packaging Helm
-│   └── iwf-ai-hub/
-│       ├── Chart.yaml
-│       ├── values.yaml
-│       └── templates/
-│
-├── 📁 .gitlab-ci.yml                    # ⭐ Phase 6 (planned) — CI/CD
-│                                       
-├── 📁 dags/                             # Airflow Workflows
-│   ├── dag_etl_results.py               # Pipeline Bronze → Silver → Gold
-│   └── dag_ingest_rules.py              # RAG pipeline (init → PDF → chunk → embed)
-│                                       
-├── 📁 dbt/                              # Transformation Layer
-│   ├── dbt_project.yml                  # Project config & materialization settings
-│   ├── profiles.yml                     # DuckDB connection profile
-│   └── models/                          # SQL transformation models
-│       ├── sources.yml                  # External raw table declarations
-│       ├── staging/                     # Silver Layer: Cleaning & Typing
-│       │   └── stg_results.sql         
-│       └── marts/                       # Gold Layer: Star Schema (BI Ready)
+├── dbt/                              # Transformation Layer
+│   ├── dbt_project.yml
+│   ├── profiles.yml
+│   └── models/
+│       ├── sources.yml
+│       ├── staging/
+│       │   └── stg_results.sql
+│       └── marts/
 │           ├── dim_athletes.sql
 │           ├── dim_weight_classes.sql
 │           ├── fct_results.sql
-│           └── schema.yml               # Data Quality Tests (not_null, unique, etc.)
+│           └── schema.yml
 │
-├── 📁 src/                              # Source Code
-│   ├── 📁 db/
-│   │   └── init.sql                     # VSS Extension + table chunks + index HNSW
-│   ├── 📁 pipelines/
-│   │   ├── extract_results.py           # Bronze Layer: Data Extraction
-│   │   ├── load_pdfs.py                 # Chargement PDFs
-│   │   ├── chunking.py                  # Découpage texte
-│   │   ├── embeddings.py                # Vectorisation (Ollama nomic-embed-text)
-│   │   └── retrieval.py                 # Recherche VSS (cosine similarity)
-│   ├── 📁 agent/                        # ⭐ Phase 4 (not yet created)
-│   │   └── ...
-│   └── 📁 api/                          # ⭐ Phase 5 (not yet created)
-│       └── ...
+├── src/                              # Source Code
+│   ├── db/
+│   │   └── init.sql
+│   ├── pipelines/
+│   │   ├── extract_results.py
+│   │   ├── load_pdfs.py
+│   │   ├── chunking.py
+│   │   ├── embeddings.py
+│   │   └── retrieval.py
+│   ├── agent/                        # Phase 4 - Agent LangGraph
+│   │   ├── graph.py
+│   │   ├── state.py
+│   │   └── tools.py
+│   └── api/                          # Phase 5 - API FastAPI
+│       ├── config.py
+│       ├── dependencies.py
+│       ├── main.py
+│       └── models.py
 │
-├── 📁 tests/                            # Tests unitaires & intégration
-│   ├── conftest.py                      # pytest markers (network)
+├── tests/
+│   ├── conftest.py
 │   ├── test_etl.py
 │   ├── test_etl_ow.py
 │   └── test_rag.py
 │
-├── 📁 notebooks/                         # ⭐ Phase 2.5 (planned) — Miroir PySpark Silver
-│   ├── silver_lifters.ipynb             # Transformation Silver en PySpark (Docker pyspark-notebook ou venv dédié)
-│   └── validate_parity.ipynb            # Validation de parité PySpark vs dbt (ligne à ligne)
+├── notebooks/                         # Phase 2.5 (planned)
+│   ├── silver_lifters.ipynb
+│   └── validate_parity.ipynb
 │
-├── 📁 ingestion/                         # ⭐ Phase 7 (planned) — Landing zone Bronze objet
-│   ├── upload_bronze.py                 # Upload boto3 vers MinIO (S3-compatible, endpoint_url local)
-│   └── README.md                        # Setup MinIO Docker + configuration boto3
+├── ingestion/                         # Phase 7 (planned)
+│   ├── upload_bronze.py
+│   └── README.md
 │
-├── 📁 data/
-│   ├── pdfs/                            # (empty — no IWF PDFs added yet)
-│   └── duckdb/                          # Base de données (volume)
+├── data/
+│   ├── pdfs/
+│   └── duckdb/
 │
-├── 📁 requirements/                     # Environnements isolés
+├── requirements/
 │   ├── base.txt
 │   └── airflow.txt
 │
-├── docker-compose.yaml                  # Dev local (Docker)
-├── Dockerfile                           # Custom Airflow + dbt-duckdb
-└── README.md                            # Ce fichier
+├── .env.example
+├── docker-compose.yaml
+├── Dockerfile
+└── README.md
 ```
 
 ---
 
-## Architecture
-- **Orchestration** : LangGraph
-- **Base de données hybride** : DuckDB (SQL & VSS)
-- **LLM & Embeddings** : Ollama (Local)
-- **Pipelines** : Apache Airflow
-- **API** : FastAPI
+> **Note DuckDB VSS** : La creation d'un index HNSW exige
+> `SET hnsw_enable_experimental_persistence = true;` apres `LOAD vss;`
+> (dans `src/db/init.sql`).
+> L'index HNSW ne persiste pas entre les sessions DuckDB.
 
-> ⚠️ **Note DuckDB VSS** — La création d'un index HNSW sur une base DuckDB
-> persistante (fichier `data/duckdb/iwf_hub.duckdb`) exige le réglage
-> `SET hnsw_enable_experimental_persistence = true;` placé **après** `LOAD vss;`
-> (défini dans `src/db/init.sql`). L'index HNSW ne persiste pas entre les
-> sessions DuckDB : il doit être recréé au démarrage de l'application.
-
-> 📄 **Sources PDF IWF (à confirmer)** — URL active retenue dans
-> `dags/dag_ingest_rules.py` :
+> **Sources PDF IWF** : URL dans `dags/dag_ingest_rules.py` :
 > `https://www.iwf.net/wp-content/uploads/downloads/2024/01/IWF_TCRR_2024.pdf`
-> Anciennes URLs candidates (non confirmées, probablement 404) conservées pour
-> vérification ultérieure :
-> <!-- https://www.iwf.net/wp-content/uploads/2024/01/IWF-Technical-and-Competition-Rules-2024.pdf -->
-> <!-- https://www.iwf.net/wp-content/uploads/2024/01/IWF-Anti-Doping-Policy-2024.pdf -->
 
-## 🚀 Quick Start
-### Option 1 : Docker Compose (Développement local)
+## Quick Start
+
+### Pre-requis
+
+- Python 3.11+
+- DuckDB (extension VSS activee)
+- Ollama avec les modeles `nomic-embed-text` et `llama3.2`
+- Docker et Docker Compose (pour l'ETL Airflow)
+
+### Option 1 : Docker Compose (developpement local)
+
 ```bash
-# 1. Cloner le repo
 git clone https://github.com/gautbl/iwf-ai-hub.git
 cd iwf-ai-hub
-
-# 2. Lancer l'infrastructure
 docker-compose up -d
-
-# 3. Vérifier les services
-curl http://localhost:8080/health  # Airflow
-curl http://localhost:11434/api/tags  # Ollama
+curl http://localhost:8080/health
+curl http://localhost:11434/api/tags
 ```
 
-### Option 2 : Kubernetes — Phase 6 (planned)
+### Option 2 : API FastAPI (developpement local)
 
-Le déploiement Kubernetes sera disponible en Phase 6 avec les manifests `k8s/*.yaml` et le chart Helm `helm/iwf-ai-hub/`. En attendant, utilisez Docker Compose (Option 1) pour le développement local.
+```bash
+.venv\Scripts\activate  # Windows
+uvicorn src.api.main:app --reload
+curl http://localhost:8000/health
+```
+
+L'API expose deux endpoints :
+- `GET /health` : etat de sante (DuckDB, Ollama)
+- `POST /chat` : conversation avec l'agent IWF
 
 ---
 
-## 📋 Roadmap
+## Roadmap
 
 Phase | Composant | Statut | Description |
 |---|---|---|---|
-| Phase 1 | Infrastructure Docker | ✅ Terminé | Airflow, DuckDB, Ollama |
-| Phase 2 | Pipeline ETL | ✅ Terminé | dbt, Star Schema, tests |
-| Phase 3 | Pipeline RAG | ✅ Terminé | PDFs, chunking, embeddings, retrieval |
-| Phase 4 | Agent LangGraph | ⏳ À venir | Outils, mémoire, workflow |
-| Phase 5 | API FastAPI | ⏳ À venir | REST, auth, monitoring |
-| Phase 6 | Kubernetes | ⏳ À venir | Migration, Helm, CI/CD |
-| Phase 2.5 | Miroir PySpark Silver | ⏳ Optionnel | Transformation Silver en PySpark + validation de parité vs dbt |
-| Phase 7 | Couche d'ingestion | ⏳ Optionnel | Landing zone Bronze objet : MinIO (S3-compatible) + boto3, ingestion planifiée Airflow |
+| Phase 1 | Infrastructure Docker | Fait | Airflow, DuckDB, Ollama |
+| Phase 2 | Pipeline ETL | Fait | dbt, Star Schema, tests |
+| Phase 3 | Pipeline RAG | Fait | PDFs, chunking, embeddings, retrieval |
+| Phase 4 | Agent LangGraph | Fait | Outils, memoire, workflow |
+| Phase 5 | API FastAPI | Fait | REST, auth, monitoring |
+| Phase 6 | Kubernetes | A venir | Migration, Helm, CI/CD |
+| Phase 2.5 | Miroir PySpark Silver | Optionnel | Transformation + validation parite |
+| Phase 7 | Couche d'ingestion | Optionnel | MinIO + boto3 |
 
 ---
 
-## 🎯 Objectif Professionnel
-Ce projet démontre une architecture IA/Data moderne et souveraine, alignée avec les enjeux
-de confidentialité et de performance. La migration vers Kubernetes illustre la capacité à
-industrialiser une solution IA pour la production à grande échelle.
-
-### Compétences clés mises en avant :
-
-Architecture de données (ETL, modélisation, qualité)
-Intelligence artificielle (RAG, LLM local, agents)
-DevOps & Infrastructure (Docker, Kubernetes, CI/CD)
-Souveraineté des données (on-premise, open source)
-Stockage objet S3-compatible auto-hébergé (MinIO, boto3) — Phase 7
-PySpark (miroir Silver + validation de parité vs dbt) — Phase 2.5
-
----
-
-## 🔗 Liens utiles
-DuckDB VSS Extension: https://duckdb.org/docs/extensions/vss
-LangGraph Documentation: https://langchain-ai.github.io/langgraph/
-Ollama: https://ollama.ai
-Kubernetes Documentation: https://kubernetes.io/docs/home/
-
----
-
-## 📝 Licence
-MIT — Projet personnel open source
+## Licence
+MIT - Projet personnel open source

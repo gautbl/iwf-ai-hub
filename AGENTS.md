@@ -1,7 +1,7 @@
 # AGENTS.md — IWF AI Hub
 
 ## Project Overview
-Data + AI platform for the International Weightlifting Federation. Phases 1-6 : Docker infra, ETL dbt, pipeline RAG, agent LangGraph, API FastAPI, manifests K8s. 81 tests pytest verts.
+Data + AI platform for the International Weightlifting Federation. Phases 1-5 : Docker infra, ETL dbt, pipeline RAG, agent LangGraph, API FastAPI. Phase 6 K8s reportée. 81 tests pytest verts.
 
 ## Python Environnements (CRITICAL)
 - `.venv` → ETL scripts, RAG, API, agent LangGraph
@@ -9,7 +9,7 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-6 : 
 - PySpark (optional) runs in Docker or a dedicated `.venv-spark`. **Never** in `.venv`
 
 ## Conventions
-- Python 3.11+, strict types
+- Python 3.11.9+, strict types
 - Logs via structlog, never `print()`
 - Config via pydantic-settings + ConfigMap K8s
 - One test per functional unit, pytest
@@ -26,7 +26,7 @@ Data + AI platform for the International Weightlifting Federation. Phases 1-6 : 
 - **RAG**: PDF → Chunking → Embeddings → DuckDB VSS → Agent
 - **Agent**: LangGraph — retrieve → LLM → tools
 - **API**: FastAPI — `/health`, `/chat`
-- **Infra**: Docker Compose (dev) → Kubernetes (prod)
+- **Infra**: Docker Compose (dev) — Kubernetes (prod) reporté
 - **Ingestion (optional)**: Airflow → MinIO (S3) + boto3 → Bronze
 - **PySpark mirror (optional)**: Silver transformation + parity vs dbt
 
