@@ -21,7 +21,8 @@ services:
   # Note : Pour un dev local léger, on pourrait utiliser un simple script 
   # mais Airflow est préférable pour démontrer vos compétences Data Eng.
   airflow:
-    build: .  # Tells docker to use the local Dockerfile instead of using: image: apache/airflow:2.7.1
+    build:
+      dockerfile: Dockerfile.airflow
     command: standalone
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
@@ -35,6 +36,20 @@ services:
       - ./dbt:/opt/airflow/dbt # Added so dbt has access to models and profiles.yml
       - ./data:/data           # Added so dbt can write to the DuckDB file
       - huggingface_cache:/home/airflow/.cache
+    depends_on:
+      - ollama
+
+  # API FastAgent pour l'interface de chat
+  api:
+    build:
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      - IWF_DUCKDB_PATH=data/duckdb/iwf_hub.duckdb
+      - IWF_OLLAMA_URL=http://ollama:11434
     depends_on:
       - ollama
 

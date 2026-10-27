@@ -11,6 +11,7 @@ toucher un Ollama réel).
 """
 
 import json
+import os
 from typing import Any
 
 import duckdb
@@ -28,6 +29,7 @@ from langchain_core.tools import StructuredTool
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.duckdb import DuckDBSaver
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 
 _jp_jsonplus.LC_REVIVER = Reviver(allowed_objects="core")
 
@@ -36,7 +38,7 @@ from src.agent.state import AgentState
 
 logger = structlog.get_logger()
 
-OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_BASE_URL = os.environ.get("IWF_OLLAMA_URL", "http://localhost:11434")
 LLM_MODEL = "llama3.2"
 
 # LLM lié aux outils, injecté par build_graph avant compilation. Référencé
@@ -163,7 +165,7 @@ def route(state: AgentState) -> str:
     return "tools" if getattr(last, "tool_calls", None) else "end"
 
 
-def build_graph(db_path: str = tools.DB_PATH):
+def build_graph(db_path: str = tools.DB_PATH, ollama_url: str | None = None) -> CompiledStateGraph:
     """Construit et compile le graphe avec un checkpointer DuckDB sur db_path.
 
     Le LLM ChatOllama (llama3.2, endpoint local) est lié aux outils
@@ -179,7 +181,7 @@ def build_graph(db_path: str = tools.DB_PATH):
         App LangGraph compilée, prête pour invoke.
     """
     global _bound_llm
-    llm = ChatOllama(model=LLM_MODEL, base_url=OLLAMA_BASE_URL)
+    llm = ChatOllama(model=LLM_MODEL, base_url=ollama_url or OLLAMA_BASE_URL)
     _bound_llm = llm.bind_tools(
         [
             _wrap_tool(tools.query_results, "query_results"),

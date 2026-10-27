@@ -10,6 +10,7 @@ Tous les accès DuckDB sont en lecture seule et dégradent proprement
 de sorte qu'un échec d'outil ne fait jamais planter le graphe.
 """
 
+import os
 from collections.abc import Callable
 
 import duckdb
@@ -20,7 +21,7 @@ from src.pipelines import retrieval
 logger = structlog.get_logger()
 
 # Base DuckDB du projet (production). Les outils n'y font que des lectures.
-DB_PATH = "data/duckdb/iwf_hub.duckdb"
+DB_PATH = os.environ.get("IWF_DUCKDB_PATH", "data/duckdb/iwf_hub.duckdb")
 
 
 def _escape_like(value: str) -> str:
