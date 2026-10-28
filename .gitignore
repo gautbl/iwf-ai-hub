@@ -14,6 +14,7 @@ logs/
 
 # Environnements virtuels
 .venv/
+.venv-dbt/
 .venv-spark/
 venv/
 ENV/
@@ -27,6 +28,8 @@ data/duckdb/test_iwf_hub.duckdb
 # Données brutes (on ne versionne pas les gros PDFs ou CSV)
 data/pdfs/*.pdf
 data/pdfs/*.csv
+data/csv/*.csv
+dbt/seeds/*.csv
 
 # Variables d'environnement
 .env
