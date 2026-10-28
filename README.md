@@ -87,7 +87,7 @@ graph TB
 
 ---
 
-## Structure du projet
+## Project structure
 
 ```
 iwf-ai-hub/
