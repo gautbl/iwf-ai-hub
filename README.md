@@ -71,19 +71,19 @@ graph TB
 
 ---
 
-## Stack Technique
+## Technical Stack
 
-| Composant | Technologie | Role | Environnement |
+| Component | Technology | Role | Environment |
 |---|---|---|---|
-| Orchestration | Apache Airflow | DAGs ETL, scheduling | Docker |
+| Orchestration | Apache Airflow | ETL DAGs, scheduling | Docker |
 | Transformation | dbt + DuckDB | Star Schema | Container (via Airflow) |
-| Traitement distribue | PySpark | Miroir Silver (Phase 2.5) | Docker / venv dedie |
-| Base de donnees | DuckDB + VSS | SQL + Vector Search | Container |
-| LLM and Embeddings | Ollama | LLM local, souverainete | Container |
-| Agent IA | LangGraph | Workflow conversationnel | .venv |
-| API | FastAPI | Exposition REST | .venv / Container |
-| Conteneurisation | Docker + Compose | Dev local | Local |
-| Monitoring | Prometheus/Grafana | Observabilite | Docker |
+| Distributed processing | PySpark | Silver mirror (Phase 2.5) | Docker / dedicated venv |
+| Database | DuckDB + VSS | SQL + Vector Search | Container |
+| LLM and Embeddings | Ollama | Local LLM, data sovereignty | Container |
+| AI Agent | LangGraph | Conversational workflow | .venv |
+| API | FastAPI | REST exposure | .venv / Container |
+| Containerisation | Docker + Compose | Local dev | Local |
+| Monitoring | Prometheus/Grafana | Observability | Docker |
 
 ---
 
@@ -168,14 +168,14 @@ iwf-ai-hub/
 
 ## Quick Start
 
-### Pre-requis
+### Prerequisites
 
 - Python 3.11+
-- DuckDB (extension VSS activee)
-- Ollama avec les modeles `nomic-embed-text` et `llama3.2`
-- Docker et Docker Compose (pour l'ETL Airflow)
+- DuckDB (VSS extension enabled)
+- Ollama with models `nomic-embed-text` and `llama3.2`
+- Docker and Docker Compose (for the Airflow ETL)
 
-### Option 1 : Docker Compose (developpement local)
+### Option 1 : Docker Compose (local)
 
 ```bash
 git clone https://github.com/gautbl/iwf-ai-hub.git
@@ -185,7 +185,7 @@ curl http://localhost:8080/health
 curl http://localhost:11434/api/tags
 ```
 
-### Option 2 : API FastAPI (developpement local)
+### Option 2 : FastAPI (local)
 
 ```bash
 .venv\Scripts\activate  # Windows
@@ -193,9 +193,9 @@ uvicorn src.api.main:app --reload
 curl http://localhost:8000/health
 ```
 
-L'API expose deux endpoints :
-- `GET /health` : etat de sante (DuckDB, Ollama)
-- `POST /chat` : conversation avec l'agent IWF
+The API has two endpoints :
+- `GET /health` : health check (DuckDB, Ollama)
+- `POST /chat` : conversation with the IWF agent
 
 > **Airflow build warning** : The Airflow container has a known NumPy version conflict
 > (`numpy<2` required by some upstream dependencies) and pip dependency backtracking.
