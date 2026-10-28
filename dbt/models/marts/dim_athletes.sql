@@ -6,4 +6,4 @@ SELECT
     athlete_name as name, 
     'Unknown' as country -- Can be enriched later if source data allows
 FROM {{ ref('stg_results') }}
-GROUP BY athlete_name;
+GROUP BY athlete_name

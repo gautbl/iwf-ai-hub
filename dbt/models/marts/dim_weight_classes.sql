@@ -4,4 +4,5 @@
 SELECT DISTINCT 
     row_number() OVER (ORDER BY category_name) as class_id, 
     category_name 
-FROM {{ ref('stg_results') }};
+FROM {{ ref('stg_results') }}
+GROUP BY category_name
